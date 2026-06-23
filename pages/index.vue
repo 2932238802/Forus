@@ -34,13 +34,13 @@ function onOpened() {
     <!-- 进入封面：仅未解锁时显示 -->
     <CurtainIntro v-if="mounted && showCurtain" @opened="onOpened" />
 
-    <!-- 主界面：单屏 Bento 宫格，不滚动 -->
+    <!-- 主界面：手机端可滚动垂直堆叠 / 桌面端固定一屏 Bento -->
     <div
-      class="relative h-screen w-screen overflow-hidden transition-all duration-1000"
+      class="relative min-h-screen w-screen transition-all duration-1000 md:h-screen md:overflow-hidden"
       :class="entered ? 'opacity-100 blur-0' : 'opacity-0 blur-sm'"
     >
-      <!-- 背景：暗色调 + 流星 -->
-      <div class="pointer-events-none absolute inset-0 -z-10">
+      <!-- 背景：暗色调 + 流星（固定，滚动时不动） -->
+      <div class="pointer-events-none fixed inset-0 -z-10">
         <div class="absolute inset-0 night-bg" />
         <!-- 星空 -->
         <div class="stars absolute inset-0" />
@@ -59,28 +59,33 @@ function onOpened() {
       </div>
 
       <!-- 宫格容器 -->
-      <div class="grid h-full w-full gap-4 p-4 sm:gap-5 sm:p-6
-                  grid-cols-1 grid-rows-[auto_auto_1fr]
-                  md:grid-cols-3 md:grid-rows-2">
-        <div class="night-card overflow-hidden p-6 md:col-span-1 md:row-span-1">
+      <div
+        class="flex w-full flex-col gap-4 p-4 sm:gap-5 sm:p-6
+               md:grid md:h-full md:grid-cols-3 md:grid-rows-2"
+      >
+        <!-- 左上：Forus + 在一起天数 -->
+        <div class="night-card min-h-[180px] overflow-hidden p-6 md:col-span-1 md:row-span-1 md:min-h-0">
           <TogetherCard />
         </div>
 
-        <div class="night-card overflow-hidden p-6 md:col-span-2 md:row-span-1">
+        <!-- 右上：时间线 -->
+        <div class="night-card min-h-[240px] overflow-hidden p-6 md:col-span-2 md:row-span-1 md:min-h-0">
           <ClientOnly>
             <TimelineCompact />
             <template #fallback><div class="text-sm text-slate-500">加载中…</div></template>
           </ClientOnly>
         </div>
 
-        <div class="night-card overflow-hidden p-6 md:col-span-1 md:row-span-1">
+        <!-- 左下：留言墙 -->
+        <div class="night-card min-h-[320px] overflow-hidden p-6 md:col-span-1 md:row-span-1 md:min-h-0">
           <ClientOnly>
             <NoteWall />
             <template #fallback><div class="text-sm text-slate-500">加载中…</div></template>
           </ClientOnly>
         </div>
 
-        <div class="night-card overflow-hidden p-6 md:col-span-2 md:row-span-1">
+        <!-- 右下：图片墙 -->
+        <div class="night-card min-h-[360px] overflow-hidden p-6 md:col-span-2 md:row-span-1 md:min-h-0">
           <ClientOnly>
             <MediaWall />
             <template #fallback><div class="text-sm text-slate-500">加载中…</div></template>
