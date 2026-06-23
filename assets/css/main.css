@@ -1,0 +1,116 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-mist text-ink antialiased;
+}
+
+/* 渐变文字 */
+.text-gradient {
+  @apply bg-sky-cyan bg-clip-text text-transparent;
+}
+
+/* 玻璃拟态卡片（淡雅克制） */
+.glass-card {
+  @apply rounded-2xl border border-white/70 bg-white/55 backdrop-blur-md;
+  box-shadow: 0 8px 30px -16px rgba(100, 116, 139, 0.25);
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #ecfeff;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(#2563eb, #06b6d4);
+  border-radius: 999px;
+}
+
+/* ============ 窗帘 + 阳光 进入动画 ============ */
+
+/* 窗帘布（淡雅雾蓝，褶皱极轻） */
+.curtain-soft {
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.5) 0px,
+      rgba(255, 255, 255, 0.5) 1px,
+      rgba(148, 163, 184, 0.06) 40px,
+      rgba(148, 163, 184, 0.1) 80px,
+      rgba(255, 255, 255, 0.5) 120px
+    ),
+    linear-gradient(180deg, #f0f6ff 0%, #dbeafe 45%, #cfe2f8 100%);
+  background-blend-mode: soft-light;
+}
+
+/* 右上角阳光束 */
+@keyframes sunrise {
+  0% {
+    opacity: 0;
+    transform: translate(20%, -20%) scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+}
+.sunbeam {
+  background: radial-gradient(
+    circle at 100% 0%,
+    rgba(255, 251, 235, 0.95) 0%,
+    rgba(254, 243, 199, 0.55) 12%,
+    rgba(186, 230, 253, 0.25) 30%,
+    transparent 60%
+  );
+  animation: sunrise 2.2s ease-out forwards;
+}
+
+/* 斜射光条 */
+@keyframes rayShine {
+  0% {
+    opacity: 0;
+  }
+  60% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0.5;
+  }
+}
+.sun-rays {
+  background: conic-gradient(
+    from 200deg at 100% 0%,
+    transparent 0deg,
+    rgba(255, 250, 230, 0.55) 8deg,
+    transparent 16deg,
+    rgba(255, 250, 230, 0.35) 24deg,
+    transparent 34deg,
+    rgba(255, 250, 230, 0.45) 44deg,
+    transparent 54deg
+  );
+  animation: rayShine 2.6s ease-out forwards;
+  mix-blend-mode: screen;
+}
+
+/* 漂浮的光斑 */
+@keyframes floatDust {
+  0%,
+  100% {
+    transform: translateY(0) translateX(0);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateY(-30px) translateX(12px);
+    opacity: 1;
+  }
+}
+.dust {
+  animation: floatDust 7s ease-in-out infinite;
+}

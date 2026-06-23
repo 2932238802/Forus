@@ -1,0 +1,56 @@
+<script setup lang="ts">
+import { siteConfig } from '~/data/site'
+import { togetherDays, daysUntil, formatDate } from '~/utils/date'
+import { usePassphrase } from '~/composables/usePassphrase'
+
+const days = togetherDays()
+const until = daysUntil(siteConfig.nextAnniversary)
+
+const { lock } = usePassphrase()
+function leave() {
+  lock()
+  // 回到上锁状态：重新载入页面显示窗帘
+  if (import.meta.client) location.reload()
+}
+</script>
+
+<template>
+  <div class="flex h-full flex-col">
+    <!-- 标题 -->
+    <div class="flex shrink-0 items-start justify-between">
+      <div>
+        <h1 class="text-3xl font-light tracking-[0.2em] text-slate-700">{{ siteConfig.name }}</h1>
+        <p class="mt-1 text-xs tracking-wide text-slate-400">
+          {{ siteConfig.you }} &amp; {{ siteConfig.npy }}
+        </p>
+      </div>
+      <button
+        class="text-slate-300 transition hover:text-slate-500"
+        title="上锁离开"
+        @click="leave"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-4 w-4">
+          <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- 天数 -->
+    <div class="flex flex-1 flex-col justify-center">
+      <p class="text-[11px] tracking-[0.3em] text-slate-400">在一起</p>
+      <div class="mt-1 flex items-baseline gap-2">
+        <span class="text-6xl font-extralight tabular-nums text-sky">{{ days }}</span>
+        <span class="text-lg font-light text-slate-400">天</span>
+      </div>
+      <p class="mt-2 text-xs tracking-wide text-slate-400">
+        始于 {{ formatDate(siteConfig.startDate) }}
+      </p>
+    </div>
+
+    <!-- 纪念日 -->
+    <div class="shrink-0 border-t border-slate-100 pt-3 text-xs tracking-wide text-slate-400">
+      <span v-if="until > 0">距 {{ siteConfig.nextAnniversaryLabel }} · {{ until }} 天</span>
+      <span v-else-if="until === 0" class="text-sky">今天 · {{ siteConfig.nextAnniversaryLabel }}</span>
+    </div>
+  </div>
+</template>
