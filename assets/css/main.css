@@ -55,6 +55,7 @@ body {
 }
 
 /* ============ 流星（精致柔光拖尾） ============ */
+/* 运动方向：右上 → 左下；拖尾朝右上（运动反方向），物理正确 */
 .meteor {
   position: absolute;
   top: var(--top);
@@ -69,18 +70,19 @@ body {
     0 0 18px 6px rgba(186, 230, 253, 0.55),
     0 0 30px 10px rgba(125, 211, 252, 0.3);
   opacity: 0;
-  transform: rotate(35deg);
   animation: meteor var(--dur, 6s) cubic-bezier(0.4, 0, 0.6, 1) var(--delay, 0s) infinite;
 }
-/* 流星拖尾：渐细渐隐的光带 */
+/* 流星拖尾：从头部向右上方拖出（运动反方向） */
 .meteor::after {
   content: '';
   position: absolute;
   top: 50%;
-  right: 2px;
+  left: 0;
   width: 180px;
   height: 1.5px;
-  transform: translateY(-50%);
+  /* 拖尾整体绕头部旋转，指向右上（约 215deg：左下飞 → 尾在右上） */
+  transform-origin: 0 50%;
+  transform: translateY(-50%) rotate(-145deg);
   background: linear-gradient(
     90deg,
     rgba(255, 255, 255, 0.9) 0%,
@@ -94,22 +96,22 @@ body {
 @keyframes meteor {
   0% {
     opacity: 0;
-    transform: translate(0, 0) rotate(35deg) scale(0.6);
+    transform: translate(0, 0) scale(0.6);
   }
   10% {
     opacity: 1;
-    transform: translate(-60px, 42px) rotate(35deg) scale(1);
+    transform: translate(-60px, 42px) scale(1);
   }
   55% {
     opacity: 1;
   }
   80% {
     opacity: 0;
-    transform: translate(-480px, 336px) rotate(35deg) scale(0.8);
+    transform: translate(-480px, 336px) scale(0.8);
   }
   100% {
     opacity: 0;
-    transform: translate(-480px, 336px) rotate(35deg) scale(0.8);
+    transform: translate(-480px, 336px) scale(0.8);
   }
 }
 
