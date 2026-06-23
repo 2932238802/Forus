@@ -46,10 +46,11 @@ function onOpened() {
         <div class="stars absolute inset-0" />
         <!-- 流星 -->
         <div class="meteor-sky absolute inset-0 overflow-hidden">
-          <span class="meteor" style="--top: 8%; --left: 70%; --delay: 0s; --dur: 4.5s" />
-          <span class="meteor" style="--top: 18%; --left: 88%; --delay: 2.5s; --dur: 5.5s" />
-          <span class="meteor" style="--top: 4%; --left: 45%; --delay: 6s; --dur: 5s" />
-          <span class="meteor" style="--top: 30%; --left: 95%; --delay: 9s; --dur: 6s" />
+          <span class="meteor" style="--top: 6%; --left: 65%; --delay: 0s; --dur: 6s" />
+          <span class="meteor" style="--top: 14%; --left: 90%; --delay: 3.5s; --dur: 7s" />
+          <span class="meteor" style="--top: 2%; --left: 40%; --delay: 8s; --dur: 6.5s" />
+          <span class="meteor" style="--top: 26%; --left: 96%; --delay: 12s; --dur: 7.5s" />
+          <span class="meteor" style="--top: 38%; --left: 80%; --delay: 16s; --dur: 6s" />
         </div>
         <!-- 右上角柔光 -->
         <div

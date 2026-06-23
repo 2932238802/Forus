@@ -12,12 +12,13 @@ body {
 
 /* ============ 暗色主题 ============ */
 
-/* 夜空背景 */
+/* 夜空背景（柔和深蓝，提亮、有星云辉光） */
 .night-bg {
   background:
-    radial-gradient(ellipse at 75% 10%, rgba(56, 189, 248, 0.12) 0%, transparent 45%),
-    radial-gradient(ellipse at 20% 80%, rgba(99, 102, 241, 0.12) 0%, transparent 45%),
-    linear-gradient(180deg, #0b1120 0%, #0f172a 50%, #0b1120 100%);
+    radial-gradient(ellipse 80% 60% at 78% 8%, rgba(56, 189, 248, 0.18) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 60% at 15% 85%, rgba(129, 140, 248, 0.18) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 50% at 50% 50%, rgba(96, 165, 250, 0.08) 0%, transparent 60%),
+    linear-gradient(180deg, #1b2444 0%, #1e293b 45%, #172033 100%);
 }
 
 /* 暗色卡片 */
@@ -49,52 +50,66 @@ body {
   animation: twinkle 5s ease-in-out infinite;
 }
 @keyframes twinkle {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 0.9; }
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
 }
 
-/* ============ 流星 ============ */
+/* ============ 流星（精致柔光拖尾） ============ */
 .meteor {
   position: absolute;
   top: var(--top);
   left: var(--left);
-  width: 2px;
-  height: 2px;
+  width: 3px;
+  height: 3px;
   border-radius: 9999px;
+  /* 流星头部：明亮柔光球 */
   background: #ffffff;
-  box-shadow: 0 0 6px 2px rgba(255, 255, 255, 0.6);
+  box-shadow:
+    0 0 8px 2px rgba(255, 255, 255, 0.9),
+    0 0 18px 6px rgba(186, 230, 253, 0.55),
+    0 0 30px 10px rgba(125, 211, 252, 0.3);
   opacity: 0;
-  animation: meteor var(--dur, 5s) linear var(--delay, 0s) infinite;
+  transform: rotate(35deg);
+  animation: meteor var(--dur, 6s) cubic-bezier(0.4, 0, 0.6, 1) var(--delay, 0s) infinite;
 }
-/* 流星拖尾 */
+/* 流星拖尾：渐细渐隐的光带 */
 .meteor::after {
   content: '';
   position: absolute;
   top: 50%;
-  right: 0;
-  width: 140px;
-  height: 1px;
+  right: 2px;
+  width: 180px;
+  height: 1.5px;
   transform: translateY(-50%);
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.9), transparent);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(186, 230, 253, 0.5) 30%,
+    rgba(125, 211, 252, 0.15) 70%,
+    transparent 100%
+  );
+  border-radius: 9999px;
+  filter: blur(0.5px);
 }
 @keyframes meteor {
   0% {
     opacity: 0;
-    transform: translate(0, 0) rotate(28deg);
+    transform: translate(0, 0) rotate(35deg) scale(0.6);
   }
-  8% {
+  10% {
+    opacity: 1;
+    transform: translate(-60px, 42px) rotate(35deg) scale(1);
+  }
+  55% {
     opacity: 1;
   }
-  40% {
-    opacity: 1;
-  }
-  60% {
+  80% {
     opacity: 0;
-    transform: translate(-520px, 300px) rotate(28deg);
+    transform: translate(-480px, 336px) rotate(35deg) scale(0.8);
   }
   100% {
     opacity: 0;
-    transform: translate(-520px, 300px) rotate(28deg);
+    transform: translate(-480px, 336px) rotate(35deg) scale(0.8);
   }
 }
 
