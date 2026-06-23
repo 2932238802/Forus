@@ -71,12 +71,13 @@ export function useMedia() {
     await supabase.from('media').delete().eq('id', id)
   }
 
-  // 实时同步
+  // 实时同步（每个实例用唯一频道名，避免重复订阅同名频道导致报错）
   let channel: any = null
   onMounted(() => {
     fetchAll()
+    const channelName = `media-changes-${Math.random().toString(36).slice(2, 9)}`
     channel = supabase
-      .channel('media-changes')
+      .channel(channelName)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'media' }, () => fetchAll())
       .subscribe()
   })
