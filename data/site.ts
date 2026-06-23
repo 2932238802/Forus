@@ -8,5 +8,5 @@ export const siteConfig = {
   nextAnniversary: '2027-06-22',
   nextAnniversaryLabel: '一周年',
   // 共用暗号（你和在野约定的口令）。改这里即可修改暗号。
-  passphrase: 'forus',
+  passphrase: '622',
 }
