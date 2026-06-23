@@ -5,7 +5,7 @@ import { useNotes } from '~/composables/useNotes'
 
 const { notes, addNote, removeNote } = useNotes()
 
-const author = ref(siteConfig.you)
+const author = ref(siteConfig.npy)
 const text = ref('')
 
 function submit() {

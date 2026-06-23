@@ -39,19 +39,13 @@ function onOpened() {
       class="relative min-h-screen w-screen transition-all duration-1000 md:h-screen md:overflow-hidden"
       :class="entered ? 'opacity-100 blur-0' : 'opacity-0 blur-sm'"
     >
-      <!-- 背景：暗色调 + 流星（固定，滚动时不动） -->
+      <!-- 背景：暗色夜空 + Canvas 流星雨 -->
       <div class="pointer-events-none fixed inset-0 -z-10">
         <div class="absolute inset-0 night-bg" />
-        <!-- 星空 -->
-        <div class="stars absolute inset-0" />
-        <!-- 流星 -->
-        <div class="meteor-sky absolute inset-0 overflow-hidden">
-          <span class="meteor" style="--top: 6%; --left: 65%; --delay: 0s; --dur: 6s" />
-          <span class="meteor" style="--top: 14%; --left: 90%; --delay: 3.5s; --dur: 7s" />
-          <span class="meteor" style="--top: 2%; --left: 40%; --delay: 8s; --dur: 6.5s" />
-          <span class="meteor" style="--top: 26%; --left: 96%; --delay: 12s; --dur: 7.5s" />
-          <span class="meteor" style="--top: 38%; --left: 80%; --delay: 16s; --dur: 6s" />
-        </div>
+        <!-- Canvas 流星雨（含星空） -->
+        <ClientOnly>
+          <MeteorCanvas />
+        </ClientOnly>
         <!-- 右上角柔光 -->
         <div
           class="absolute right-0 top-0 h-[55vh] w-[50vw] opacity-30"
