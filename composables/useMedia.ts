@@ -28,12 +28,14 @@ export function useMedia() {
     loading.value = false
   }
 
-  /** 上传文件到 Supabase Storage，返回公链 */
+  /** 上传文件到 Supabase Storage，返回公链（图片自动压缩） */
   async function uploadFile(file: File): Promise<{ url: string; kind: 'image' | 'video' }> {
     const kind = file.type.startsWith('video') ? 'video' : 'image'
-    const ext = file.name.split('.').pop() || 'bin'
+    // 图片上传前自动压缩（视频原样）
+    const finalFile = kind === 'image' ? await compressImage(file) : file
+    const ext = finalFile.name.split('.').pop() || 'bin'
     const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
-    const { error } = await supabase.storage.from('media').upload(path, file, {
+    const { error } = await supabase.storage.from('media').upload(path, finalFile, {
       cacheControl: '3600',
       upsert: false,
     })
