@@ -79,8 +79,7 @@ async function confirmRemove(item: MediaItem) {
 
 <template>
   <div class="flex h-full flex-col">
-    <div class="flex shrink-0 items-center justify-between">
-      <h2 class="text-sm font-medium tracking-wide text-slate-400">图片墙</h2>
+    <div class="mb-2 flex shrink-0 justify-end">
       <button
         class="flex h-7 w-7 items-center justify-center rounded-full bg-sky-500 text-white transition hover:bg-sky-400 active:scale-95"
         title="添加"
@@ -92,7 +91,7 @@ async function confirmRemove(item: MediaItem) {
       </button>
     </div>
 
-    <div class="mt-3 flex-1 overflow-y-auto pr-1">
+    <div class="flex-1 overflow-y-auto pr-1">
       <div v-if="media.length" class="columns-2 gap-2.5 [&>*]:mb-2.5 sm:columns-3">
         <figure
           v-for="item in media"

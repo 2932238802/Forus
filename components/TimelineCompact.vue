@@ -42,8 +42,7 @@ async function save() {
 
 <template>
   <div class="flex h-full flex-col">
-    <div class="flex shrink-0 items-center justify-between">
-      <h2 class="text-sm font-medium tracking-wide text-slate-400">时间线</h2>
+    <div class="mb-2 flex shrink-0 justify-end">
       <button
         class="flex h-7 w-7 items-center justify-center rounded-full bg-sky-500 text-white transition hover:bg-sky-400 active:scale-95"
         title="添加节点"
@@ -55,7 +54,7 @@ async function save() {
       </button>
     </div>
 
-    <div class="mt-3 flex-1 overflow-y-auto pr-1">
+    <div class="flex-1 overflow-y-auto pr-1">
       <ul class="space-y-3">
         <li v-for="m in milestones" :key="m.id" class="group flex items-center gap-3">
           <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/5 text-sm">

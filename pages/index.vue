@@ -34,56 +34,63 @@ function onOpened() {
     <!-- 进入封面：仅未解锁时显示 -->
     <CurtainIntro v-if="mounted && showCurtain" @opened="onOpened" />
 
-    <!-- 主界面：手机端可滚动垂直堆叠 / 桌面端固定一屏 Bento -->
+    <!-- 主界面：可滚动，三块默认折叠 -->
     <div
-      class="relative min-h-screen w-screen transition-all duration-1000 md:h-screen md:overflow-hidden"
+      class="relative min-h-screen w-screen transition-all duration-1000"
       :class="entered ? 'opacity-100 blur-0' : 'opacity-0 blur-sm'"
     >
       <!-- 背景：暗色夜空 + Canvas 流星雨 -->
       <div class="pointer-events-none fixed inset-0 -z-10">
         <div class="absolute inset-0 night-bg" />
-        <!-- Canvas 流星雨（含星空） -->
         <ClientOnly>
           <MeteorCanvas />
         </ClientOnly>
-        <!-- 右上角柔光 -->
         <div
           class="absolute right-0 top-0 h-[55vh] w-[50vw] opacity-30"
           style="background: radial-gradient(circle at 100% 0%, rgba(125,211,252,0.25) 0%, rgba(56,189,248,0.08) 40%, transparent 70%)"
         />
       </div>
 
-      <!-- 宫格容器 -->
-      <div
-        class="flex w-full flex-col gap-4 p-4 sm:gap-5 sm:p-6
-               md:grid md:h-full md:grid-cols-3 md:grid-rows-2"
-      >
-        <!-- 左上：Forus + 在一起天数 -->
-        <div class="night-card min-h-[180px] overflow-hidden p-6 md:col-span-1 md:row-span-1 md:min-h-0">
+      <!-- 内容：居中单列 -->
+      <div class="mx-auto flex w-full max-w-2xl flex-col gap-4 p-4 sm:p-6">
+        <!-- 顶部：Forus + 在一起天数（不折叠） -->
+        <div class="night-card p-6">
           <TogetherCard />
         </div>
 
-        <!-- 右上：时间线 -->
-        <div class="night-card min-h-[240px] overflow-hidden p-6 md:col-span-2 md:row-span-1 md:min-h-0">
+        <!-- 时间线（默认折叠） -->
+        <div class="night-card p-5">
           <ClientOnly>
-            <TimelineCompact />
-            <template #fallback><div class="text-sm text-slate-500">加载中…</div></template>
+            <FoldCard title="时间线">
+              <div class="max-h-[50vh] overflow-y-auto">
+                <TimelineCompact />
+              </div>
+            </FoldCard>
+            <template #fallback><div class="text-sm text-slate-500">时间线</div></template>
           </ClientOnly>
         </div>
 
-        <!-- 左下：留言墙 -->
-        <div class="night-card min-h-[320px] overflow-hidden p-6 md:col-span-1 md:row-span-1 md:min-h-0">
+        <!-- 留言墙（默认折叠） -->
+        <div class="night-card p-5">
           <ClientOnly>
-            <NoteWall />
-            <template #fallback><div class="text-sm text-slate-500">加载中…</div></template>
+            <FoldCard title="留言墙">
+              <div class="h-[55vh]">
+                <NoteWall />
+              </div>
+            </FoldCard>
+            <template #fallback><div class="text-sm text-slate-500">留言墙</div></template>
           </ClientOnly>
         </div>
 
-        <!-- 右下：图片墙 -->
-        <div class="night-card min-h-[360px] overflow-hidden p-6 md:col-span-2 md:row-span-1 md:min-h-0">
+        <!-- 图片墙（默认折叠） -->
+        <div class="night-card p-5">
           <ClientOnly>
-            <MediaWall />
-            <template #fallback><div class="text-sm text-slate-500">加载中…</div></template>
+            <FoldCard title="图片墙">
+              <div class="max-h-[60vh] overflow-y-auto">
+                <MediaWall />
+              </div>
+            </FoldCard>
+            <template #fallback><div class="text-sm text-slate-500">图片墙</div></template>
           </ClientOnly>
         </div>
       </div>
