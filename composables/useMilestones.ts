@@ -34,6 +34,18 @@ export function useMilestones() {
     })
   }
 
+  async function updateMilestone(id: string, m: Partial<Omit<Milestone, 'id' | 'description'>>) {
+    await supabase
+      .from('milestones')
+      .update({
+        title: m.title,
+        date: m.date,
+        type: m.type,
+        emoji: m.emoji || '🤍',
+      })
+      .eq('id', id)
+  }
+
   async function removeMilestone(id: string) {
     await supabase.from('milestones').delete().eq('id', id)
   }
@@ -50,5 +62,5 @@ export function useMilestones() {
     if (channel) supabase.removeChannel(channel)
   })
 
-  return { milestones, addMilestone, removeMilestone }
+  return { milestones, addMilestone, updateMilestone, removeMilestone }
 }

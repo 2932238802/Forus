@@ -82,7 +82,7 @@ async function confirmRemove(item: MediaItem) {
     <div class="flex shrink-0 items-center justify-between">
       <h2 class="text-sm font-medium tracking-wide text-slate-400">图片墙</h2>
       <button
-        class="flex h-7 w-7 items-center justify-center rounded-full bg-sky text-white transition hover:bg-sky-deep active:scale-95"
+        class="flex h-7 w-7 items-center justify-center rounded-full bg-sky-500 text-white transition hover:bg-sky-400 active:scale-95"
         title="添加"
         @click="openAdd"
       >
@@ -97,14 +97,14 @@ async function confirmRemove(item: MediaItem) {
         <figure
           v-for="item in media"
           :key="item.id"
-          class="group relative break-inside-avoid overflow-hidden rounded-xl bg-white shadow-sm"
+          class="group relative break-inside-avoid overflow-hidden rounded-xl bg-white/5 shadow-sm"
         >
           <img v-if="item.kind === 'image'" :src="item.url" :alt="item.title" loading="lazy" class="w-full" />
           <video v-else :src="item.url" controls preload="metadata" class="w-full" />
 
           <figcaption v-if="item.title || item.date" class="px-2.5 py-1.5">
-            <p v-if="item.title" class="truncate text-xs font-medium text-slate-700">{{ item.title }}</p>
-            <p v-if="item.date" class="text-[10px] tabular-nums text-slate-400">{{ item.date }}</p>
+            <p v-if="item.title" class="truncate text-xs font-medium text-slate-200">{{ item.title }}</p>
+            <p v-if="item.date" class="text-[10px] tabular-nums text-slate-500">{{ item.date }}</p>
           </figcaption>
 
           <div class="absolute right-1.5 top-1.5 flex gap-1 opacity-0 transition group-hover:opacity-100">
@@ -122,7 +122,7 @@ async function confirmRemove(item: MediaItem) {
         </figure>
       </div>
 
-      <div v-else class="flex h-full flex-col items-center justify-center text-center text-slate-300">
+      <div v-else class="flex h-full flex-col items-center justify-center text-center text-slate-600">
         <span class="text-2xl">🖼️</span>
         <p class="mt-2 text-xs">点右上角 + 添加第一张</p>
       </div>
@@ -130,36 +130,36 @@ async function confirmRemove(item: MediaItem) {
 
     <Teleport to="body">
       <div v-if="showEditor" class="fixed inset-0 z-[200] flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-slate-900/30 backdrop-blur-sm" @click="showEditor = false" />
-        <div class="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-          <h3 class="text-base font-semibold text-slate-700">{{ editingId ? '编辑' : '添加' }}</h3>
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="showEditor = false" />
+        <div class="relative w-full max-w-md rounded-2xl border border-white/10 bg-slate-900 p-6 shadow-2xl">
+          <h3 class="text-base font-semibold text-slate-100">{{ editingId ? '编辑' : '添加' }}</h3>
 
-          <div v-if="form.url" class="mt-4 overflow-hidden rounded-xl border border-slate-100">
+          <div v-if="form.url" class="mt-4 overflow-hidden rounded-xl border border-white/10">
             <img v-if="form.kind === 'image'" :src="form.url" class="max-h-48 w-full object-cover" />
             <video v-else :src="form.url" controls class="max-h-48 w-full" />
           </div>
 
           <div class="mt-4">
-            <label class="text-xs font-medium text-slate-500">导入图片 / 视频</label>
+            <label class="text-xs font-medium text-slate-400">导入图片 / 视频</label>
             <input
               type="file"
               accept="image/*,video/*"
-              class="mt-1.5 block w-full text-xs text-slate-500 file:mr-3 file:cursor-pointer file:rounded-full file:border-0 file:bg-sky/10 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-sky"
+              class="mt-1.5 block w-full text-xs text-slate-400 file:mr-3 file:cursor-pointer file:rounded-full file:border-0 file:bg-sky-500/20 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-sky-300"
               @change="onFilePick"
             />
-            <p v-if="saving" class="mt-1 text-xs text-cyan">处理中…</p>
+            <p v-if="saving" class="mt-1 text-xs text-sky-300">处理中…</p>
           </div>
 
-          <input v-model="form.url" type="text" placeholder="或粘贴链接 https://..." class="mt-3 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-sky" />
+          <input v-model="form.url" type="text" placeholder="或粘贴链接 https://..." class="mt-3 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-100 outline-none focus:border-sky-400" />
 
           <div class="mt-3 grid gap-2">
-            <input v-model="form.title" type="text" placeholder="标题" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-sky" />
-            <input v-model="form.date" type="date" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-500 outline-none focus:border-sky" />
+            <input v-model="form.title" type="text" placeholder="标题" class="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-100 outline-none focus:border-sky-400" />
+            <input v-model="form.date" type="date" class="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-300 outline-none focus:border-sky-400" />
           </div>
 
           <div class="mt-5 flex justify-end gap-2">
-            <button class="rounded-full px-4 py-2 text-sm text-slate-400 hover:bg-slate-100" @click="showEditor = false">取消</button>
-            <button :disabled="saving" class="rounded-full bg-sky px-5 py-2 text-sm font-medium text-white hover:bg-sky-deep active:scale-95 disabled:opacity-50" @click="save">保存</button>
+            <button class="rounded-full px-4 py-2 text-sm text-slate-400 hover:bg-white/5" @click="showEditor = false">取消</button>
+            <button :disabled="saving" class="rounded-full bg-sky-500 px-5 py-2 text-sm font-medium text-white hover:bg-sky-400 active:scale-95 disabled:opacity-50" @click="save">保存</button>
           </div>
         </div>
       </div>

@@ -19,17 +19,16 @@ function submit() {
   <div class="flex h-full flex-col">
     <h2 class="shrink-0 text-sm font-medium tracking-wide text-slate-400">留言墙</h2>
 
-    <!-- 列表 -->
     <div class="mt-3 flex-1 space-y-2 overflow-y-auto pr-1">
       <div
         v-for="n in notes"
         :key="n.id"
-        class="group relative rounded-xl border border-slate-100 bg-white/70 px-3 py-2"
+        class="group relative rounded-xl border border-white/10 bg-white/5 px-3 py-2"
       >
-        <p class="text-sm leading-relaxed text-slate-700">{{ n.text }}</p>
-        <span class="mt-1 block text-[11px] tracking-wide text-slate-400">{{ n.author }}</span>
+        <p class="text-sm leading-relaxed text-slate-200">{{ n.text }}</p>
+        <span class="mt-1 block text-[11px] tracking-wide text-slate-500">{{ n.author }}</span>
         <button
-          class="absolute right-2 top-2 text-slate-300 opacity-0 transition hover:text-rose-400 group-hover:opacity-100"
+          class="absolute right-2 top-2 text-slate-600 opacity-0 transition hover:text-rose-400 group-hover:opacity-100"
           title="删除"
           @click="removeNote(n.id)"
         >
@@ -38,13 +37,9 @@ function submit() {
           </svg>
         </button>
       </div>
-
-      <p v-if="!notes.length" class="pt-6 text-center text-xs text-slate-300">
-        还没有留言，写下第一句话
-      </p>
+      <p v-if="!notes.length" class="pt-6 text-center text-xs text-slate-600">还没有留言，写下第一句话</p>
     </div>
 
-    <!-- 输入 -->
     <form class="mt-3 shrink-0 space-y-2" @submit.prevent="submit">
       <div class="flex gap-1.5 text-xs">
         <button
@@ -52,7 +47,7 @@ function submit() {
           :key="name"
           type="button"
           class="rounded-full px-2.5 py-1 transition"
-          :class="author === name ? 'bg-sky text-white' : 'bg-slate-100 text-slate-500'"
+          :class="author === name ? 'bg-sky-500 text-white' : 'bg-white/5 text-slate-400'"
           @click="author = name"
         >
           {{ name }}
@@ -63,11 +58,11 @@ function submit() {
           v-model="text"
           type="text"
           placeholder="写一句话…"
-          class="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-sky"
+          class="min-w-0 flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-100 outline-none focus:border-sky-400"
         />
         <button
           type="submit"
-          class="shrink-0 rounded-lg bg-sky px-3 py-2 text-sm font-medium text-white transition hover:bg-sky-deep active:scale-95"
+          class="shrink-0 rounded-lg bg-sky-500 px-3 py-2 text-sm font-medium text-white transition hover:bg-sky-400 active:scale-95"
         >
           发送
         </button>
