@@ -4,6 +4,7 @@ import { ref } from 'vue'
 const props = defineProps<{
   title: string
   defaultOpen?: boolean
+  forceOpen?: boolean // PC 端强制展开、不可折叠
 }>()
 
 const open = ref(props.defaultOpen ?? false)
@@ -11,15 +12,17 @@ const open = ref(props.defaultOpen ?? false)
 
 <template>
   <div class="flex h-full flex-col">
-    <!-- 标题栏（点击折叠/展开） -->
+    <!-- 标题栏 -->
     <button
       class="flex shrink-0 items-center justify-between text-left"
-      @click="open = !open"
+      :class="forceOpen ? 'cursor-default' : ''"
+      @click="!forceOpen && (open = !open)"
     >
       <h2 class="text-sm font-medium tracking-wide text-slate-300">{{ title }}</h2>
       <span class="flex items-center gap-2">
         <slot name="action" />
         <svg
+          v-if="!forceOpen"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -32,8 +35,8 @@ const open = ref(props.defaultOpen ?? false)
       </span>
     </button>
 
-    <!-- 内容（折叠时隐藏） -->
-    <div v-show="open" class="mt-3 flex min-h-0 flex-1 flex-col">
+    <!-- 内容 -->
+    <div v-show="forceOpen || open" class="mt-3 flex min-h-0 flex-1 flex-col">
       <slot />
     </div>
   </div>
