@@ -2,10 +2,10 @@
 import { ref } from 'vue'
 
 const links = [
-  { to: '/', label: 'Home', emoji: '🏠' },
-  { to: '/memo', label: '不能忘的事', emoji: '📝' },
-  { to: '/goals', label: '!TARGET!', emoji: '🎯' },
-  { to: '/likes', label: 'Like And Unlike', emoji: '💗' },
+  { to: '/', label: 'Home' },
+  { to: '/memo', label: '不能忘的事' },
+  { to: '/goals', label: '!TARGET!' },
+  { to: '/likes', label: 'Like And Unlike' },
 ]
 
 const open = ref(false)
@@ -28,7 +28,6 @@ const open = ref(false)
         :style="{ transitionDelay: `${i * 40}ms` }"
         @click="open = false"
       >
-        <span class="text-base">{{ l.emoji }}</span>
         <span class="whitespace-nowrap">{{ l.label }}</span>
       </NuxtLink>
     </transition-group>
