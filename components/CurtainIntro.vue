@@ -59,7 +59,7 @@ function submit() {
       </h1>
       <div class="mt-8 h-px w-12 bg-white/30" />
       <p class="mt-6 text-xs font-light tracking-[0.25em] text-slate-400">
-        轻触夜空，划过星河
+        我 是LosAngelous
       </p>
     </div>
 
