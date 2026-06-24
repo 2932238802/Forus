@@ -10,7 +10,7 @@ const links = [
 </script>
 
 <template>
-  <nav class="mx-auto flex w-full max-w-4xl flex-wrap items-center justify-between gap-3 px-4 pt-5 sm:px-6">
+  <nav class="mx-auto flex w-full max-w-[1600px] flex-wrap items-center justify-between gap-3 px-4 pt-5 sm:px-6">
     <NuxtLink to="/" class="text-xl font-light tracking-[0.2em] text-slate-100">
       {{ siteConfig.name }}
     </NuxtLink>

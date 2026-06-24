@@ -37,7 +37,7 @@ function onOpened() {
       <NavBar />
 
       <div
-        class="mx-auto flex w-full max-w-4xl flex-col gap-4 p-4 sm:p-6
+        class="mx-auto flex w-full max-w-[1600px] flex-col gap-4 p-4 sm:p-6
                md:grid md:grid-cols-3 md:gap-5"
       >
         <!-- 在一起天数 -->
