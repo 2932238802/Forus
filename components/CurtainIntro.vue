@@ -13,11 +13,10 @@ const gone = ref(false)
 const pass = ref('')
 const wrong = ref(false)
 
-function onLion(e: MouseEvent) {
-  e.stopPropagation()
+function onEnter(e: MouseEvent) {
   if (entering.value) return
   entering.value = true
-  // 在狮子位置打一个大水波
+  // 在点击位置打一个水波
   if (waterRef.value?.bigDrop) waterRef.value.bigDrop(e.clientX, e.clientY)
   setTimeout(() => {
     if (unlocked.value) finish()
@@ -54,26 +53,18 @@ function submit() {
     <!-- 轻微暗化让文字可读 -->
     <div class="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/40" />
 
-    <!-- 中央内容 -->
+    <!-- 中央内容（点击进入） -->
     <div
-      class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center transition-opacity duration-700"
-      :class="entering ? 'opacity-0' : 'opacity-100'"
+      class="absolute inset-0 flex cursor-pointer flex-col items-center justify-center text-center transition-opacity duration-700"
+      :class="entering ? 'pointer-events-none opacity-0' : 'opacity-100'"
+      @click="onEnter"
     >
-      <button
-        class="pointer-events-auto select-none text-7xl drop-shadow-[0_4px_20px_rgba(0,0,0,0.5)] transition-transform duration-300 hover:scale-110 active:scale-95 sm:text-8xl"
-        style="animation: lionFloat 4s ease-in-out infinite"
-        title="点我进入"
-        @click="onLion"
-      >
-        🦁
-      </button>
-
-      <h1 class="mt-8 px-6 text-2xl font-light tracking-[0.15em] text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.7)] sm:text-3xl">
+      <h1 class="px-6 text-2xl font-light tracking-[0.15em] text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.7)] sm:text-4xl">
         {{ siteConfig.curtainGreeting }}
       </h1>
-      <div class="mt-6 h-px w-12 bg-white/40" />
-      <p class="mt-5 text-xs font-light tracking-[0.25em] text-white/70 drop-shadow">
-        轻触小狮子，泛起涟漪
+      <div class="mt-8 h-px w-12 bg-white/40" />
+      <p class="mt-6 text-xs font-light tracking-[0.25em] text-white/70 drop-shadow">
+        轻触湖面，泛起涟漪
       </p>
     </div>
 
@@ -102,10 +93,3 @@ function submit() {
     </div>
   </div>
 </template>
-
-<style scoped>
-@keyframes lionFloat {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
-}
-</style>
