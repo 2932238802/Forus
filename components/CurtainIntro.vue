@@ -6,22 +6,19 @@ import { usePassphrase } from '~/composables/usePassphrase'
 const emit = defineEmits<{ opened: [] }>()
 const { unlocked, tryUnlock } = usePassphrase()
 
-const waterRef = ref<any>(null)
 const entering = ref(false)
 const askPass = ref(false)
 const gone = ref(false)
 const pass = ref('')
 const wrong = ref(false)
 
-function onEnter(e: MouseEvent) {
-  if (entering.value) return
+function onEnter() {
+  if (entering.value || askPass.value) return
   entering.value = true
-  // 在点击位置打一个水波
-  if (waterRef.value?.bigDrop) waterRef.value.bigDrop(e.clientX, e.clientY)
   setTimeout(() => {
     if (unlocked.value) finish()
     else askPass.value = true
-  }, 1300)
+  }, 700)
 }
 
 function finish() {
@@ -44,14 +41,12 @@ function submit() {
 </script>
 
 <template>
-  <div v-if="!gone" class="fixed inset-0 z-[100] overflow-hidden bg-black">
-    <!-- 真实水面（WebGL，点击产生水波） -->
+  <div v-if="!gone" class="fixed inset-0 z-[100] overflow-hidden">
+    <!-- 流星夜空背景（与主界面统一） -->
+    <div class="absolute inset-0 night-bg" />
     <ClientOnly>
-      <WaterRipple ref="waterRef" src="/lake.jpg" />
+      <MeteorCanvas :interactive="true" />
     </ClientOnly>
-
-    <!-- 轻微暗化让文字可读 -->
-    <div class="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/40" />
 
     <!-- 中央内容（点击进入） -->
     <div
@@ -59,21 +54,21 @@ function submit() {
       :class="entering ? 'pointer-events-none opacity-0' : 'opacity-100'"
       @click="onEnter"
     >
-      <h1 class="px-6 text-2xl font-light tracking-[0.15em] text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.7)] sm:text-4xl">
+      <h1 class="px-6 text-2xl font-light tracking-[0.15em] text-slate-100 drop-shadow sm:text-4xl">
         {{ siteConfig.curtainGreeting }}
       </h1>
-      <div class="mt-8 h-px w-12 bg-white/40" />
-      <p class="mt-6 text-xs font-light tracking-[0.25em] text-white/70 drop-shadow">
-        轻触湖面，泛起涟漪
+      <div class="mt-8 h-px w-12 bg-white/30" />
+      <p class="mt-6 text-xs font-light tracking-[0.25em] text-slate-400">
+        轻触夜空，划过星河
       </p>
     </div>
 
     <!-- 暗号输入 -->
     <div
       v-if="askPass"
-      class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/40 text-center backdrop-blur-sm"
+      class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/30 text-center backdrop-blur-sm"
     >
-      <p class="text-xs font-light tracking-[0.25em] text-white/80">我们的暗号</p>
+      <p class="text-xs font-light tracking-[0.25em] text-slate-300">我们的暗号</p>
       <form class="mt-5 flex flex-col items-center" @submit.prevent="submit">
         <input
           v-model="pass"

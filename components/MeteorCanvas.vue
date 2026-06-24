@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 
+// interactive: 是否启用鼠标彗星尾（封面用 true，主界面背景用 false）
+const props = withDefaults(defineProps<{ interactive?: boolean }>(), {
+  interactive: false,
+})
+
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 let ctx: CanvasRenderingContext2D | null = null
 let raf = 0
@@ -8,35 +13,25 @@ let W = 0
 let H = 0
 let dpr = 1
 
-// 背景静态星星
 interface Star {
-  x: number
-  y: number
-  r: number
-  base: number
-  twk: number
-  phase: number
+  x: number; y: number; r: number; base: number; twk: number; phase: number
 }
-// 流星
 interface Meteor {
-  x: number
-  y: number
-  len: number
-  speed: number
-  size: number
-  life: number
-  maxLife: number
-  active: boolean
+  x: number; y: number; len: number; speed: number; size: number
+  life: number; maxLife: number; active: boolean
+}
+// 鼠标拖尾粒子
+interface Trail {
+  x: number; y: number; vx: number; vy: number; life: number; maxLife: number; size: number
 }
 
 const stars: Star[] = []
 const meteors: Meteor[] = []
+const trails: Trail[] = []
 
-// 流星飞行方向：从右上 → 左下（与拖尾天然一致）
-// 速度向量（左下）：vx<0, vy>0
-const ANGLE = Math.PI * 0.78 // 约 140°，指向左下
-const DIRX = Math.cos(ANGLE) // 负
-const DIRY = Math.sin(ANGLE) // 正
+const ANGLE = Math.PI * 0.78
+const DIRX = Math.cos(ANGLE)
+const DIRY = Math.sin(ANGLE)
 
 function rand(min: number, max: number) {
   return min + Math.random() * (max - min)
@@ -64,7 +59,7 @@ function resize() {
 
 function buildStars() {
   stars.length = 0
-  const count = Math.floor((W * H) / 6000) // 密度
+  const count = Math.floor((W * H) / 6000)
   for (let i = 0; i < count; i++) {
     stars.push({
       x: Math.random() * W,
@@ -78,16 +73,11 @@ function buildStars() {
 }
 
 function spawnMeteor() {
-  // 从屏幕上方/右侧边缘附近出现
-  const startX = rand(W * 0.3, W * 1.1)
-  const startY = rand(-H * 0.1, H * 0.4)
-  const len = rand(140, 260)
-  const speed = rand(6, 11)
   meteors.push({
-    x: startX,
-    y: startY,
-    len,
-    speed,
+    x: rand(W * 0.3, W * 1.1),
+    y: rand(-H * 0.1, H * 0.4),
+    len: rand(140, 260),
+    speed: rand(6, 11),
     size: rand(1.2, 2.2),
     life: 0,
     maxLife: rand(60, 110),
@@ -95,13 +85,35 @@ function spawnMeteor() {
   })
 }
 
+// 鼠标移动：在鼠标处撒星尘
+let lastX = 0
+let lastY = 0
+function onMouseMove(e: MouseEvent) {
+  if (!props.interactive) return
+  const dx = e.clientX - lastX
+  const dy = e.clientY - lastY
+  lastX = e.clientX
+  lastY = e.clientY
+  // 移动越快撒越多
+  const n = Math.min(4, 1 + Math.floor(Math.hypot(dx, dy) / 8))
+  for (let i = 0; i < n; i++) {
+    trails.push({
+      x: e.clientX + rand(-3, 3),
+      y: e.clientY + rand(-3, 3),
+      vx: dx * 0.05 + rand(-0.4, 0.4),
+      vy: dy * 0.05 + rand(-0.4, 0.4),
+      life: 0,
+      maxLife: rand(28, 50),
+      size: rand(1, 2.4),
+    })
+  }
+}
+
 let t = 0
 let nextSpawn = 30
 function draw() {
   if (!ctx) return
   t++
-
-  // 清空（透明，露出 CSS 夜空背景）
   ctx.clearRect(0, 0, W, H)
 
   // 星星
@@ -113,34 +125,26 @@ function draw() {
     ctx.fill()
   }
 
-  // 生成流星
+  // 流星
   if (t >= nextSpawn) {
     spawnMeteor()
     nextSpawn = t + rand(70, 160)
   }
-
-  // 画流星
   for (const m of meteors) {
     if (!m.active) continue
     m.x += DIRX * m.speed
     m.y += DIRY * m.speed
     m.life++
-
-    // 淡入淡出
     const p = m.life / m.maxLife
     let alpha = 1
     if (p < 0.15) alpha = p / 0.15
     else if (p > 0.7) alpha = Math.max(0, (1 - p) / 0.3)
-
-    // 拖尾末端 = 头部 - 方向 * 长度（尾巴在身后，物理正确）
     const tailX = m.x - DIRX * m.len
     const tailY = m.y - DIRY * m.len
-
     const grad = ctx.createLinearGradient(m.x, m.y, tailX, tailY)
     grad.addColorStop(0, `rgba(255,255,255,${0.9 * alpha})`)
     grad.addColorStop(0.3, `rgba(186,230,253,${0.5 * alpha})`)
     grad.addColorStop(1, 'rgba(125,211,252,0)')
-
     ctx.strokeStyle = grad
     ctx.lineWidth = m.size
     ctx.lineCap = 'round'
@@ -148,8 +152,6 @@ function draw() {
     ctx.moveTo(m.x, m.y)
     ctx.lineTo(tailX, tailY)
     ctx.stroke()
-
-    // 头部光点
     ctx.beginPath()
     ctx.arc(m.x, m.y, m.size * 1.1, 0, Math.PI * 2)
     ctx.fillStyle = `rgba(255,255,255,${alpha})`
@@ -157,15 +159,30 @@ function draw() {
     ctx.shadowBlur = 8
     ctx.fill()
     ctx.shadowBlur = 0
-
-    if (m.life >= m.maxLife || m.x < -m.len || m.y > H + m.len) {
-      m.active = false
-    }
+    if (m.life >= m.maxLife || m.x < -m.len || m.y > H + m.len) m.active = false
   }
-
-  // 回收
   for (let i = meteors.length - 1; i >= 0; i--) {
     if (!meteors[i].active) meteors.splice(i, 1)
+  }
+
+  // 鼠标彗星尾粒子
+  for (const tr of trails) {
+    tr.x += tr.vx
+    tr.y += tr.vy
+    tr.vx *= 0.96
+    tr.vy *= 0.96
+    tr.life++
+    const a = Math.max(0, 1 - tr.life / tr.maxLife)
+    ctx.beginPath()
+    ctx.arc(tr.x, tr.y, tr.size * a, 0, Math.PI * 2)
+    ctx.fillStyle = `rgba(186,230,253,${a * 0.9})`
+    ctx.shadowColor = 'rgba(125,211,252,0.8)'
+    ctx.shadowBlur = 6
+    ctx.fill()
+    ctx.shadowBlur = 0
+  }
+  for (let i = trails.length - 1; i >= 0; i--) {
+    if (trails[i].life >= trails[i].maxLife) trails.splice(i, 1)
   }
 
   raf = requestAnimationFrame(draw)
@@ -179,11 +196,12 @@ onMounted(() => {
   setup()
   raf = requestAnimationFrame(draw)
   window.addEventListener('resize', onResize)
+  if (props.interactive) window.addEventListener('mousemove', onMouseMove)
 })
-
 onUnmounted(() => {
   cancelAnimationFrame(raf)
   window.removeEventListener('resize', onResize)
+  window.removeEventListener('mousemove', onMouseMove)
 })
 </script>
 
