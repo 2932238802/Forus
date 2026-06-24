@@ -3,7 +3,8 @@ import { useSupabaseClient } from '#imports'
 
 export interface Like {
   id: string
-  owner: string   // 谁的喜好（在野 / LosAngelous）
+  owner: string         // 谁（在野 / LosAngelous）
+  kind: 'like' | 'dislike' // 喜欢 / 不喜欢
   text: string
   at: number
 }
@@ -13,7 +14,13 @@ export function useLikes() {
   const likes = ref<Like[]>([])
 
   function mapRow(r: any): Like {
-    return { id: r.id, owner: r.owner, text: r.text, at: new Date(r.created_at).getTime() }
+    return {
+      id: r.id,
+      owner: r.owner,
+      kind: r.kind || 'like',
+      text: r.text,
+      at: new Date(r.created_at).getTime(),
+    }
   }
 
   async function fetchAll() {
@@ -24,9 +31,9 @@ export function useLikes() {
     if (!error && data) likes.value = data.map(mapRow)
   }
 
-  async function addLike(owner: string, text: string) {
+  async function addLike(owner: string, kind: 'like' | 'dislike', text: string) {
     if (!text.trim()) return
-    await supabase.from('likes').insert({ owner, text: text.trim() })
+    await supabase.from('likes').insert({ owner, kind, text: text.trim() })
   }
 
   async function removeLike(id: string) {
