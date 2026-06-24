@@ -14,8 +14,8 @@ function leave() {
 </script>
 
 <template>
-  <div class="flex h-full flex-col">
-    <div class="flex shrink-0 items-start justify-between">
+  <div class="flex flex-col">
+    <div class="flex items-start justify-between">
       <div>
         <h1 class="text-3xl font-light tracking-[0.2em] text-slate-100">{{ siteConfig.name }}</h1>
         <p class="mt-1 text-xs tracking-wide text-slate-400">
@@ -29,9 +29,9 @@ function leave() {
       </button>
     </div>
 
-    <div class="flex flex-1 flex-col justify-center">
+    <div class="my-8">
       <p class="text-[11px] tracking-[0.3em] text-slate-400">在一起</p>
-      <div class="mt-1 flex items-baseline gap-2">
+      <div class="mt-2 flex items-baseline gap-2">
         <span class="text-6xl font-extralight tabular-nums text-gradient">{{ days }}</span>
         <span class="text-lg font-light text-slate-400">天</span>
       </div>
@@ -40,7 +40,7 @@ function leave() {
       </p>
     </div>
 
-    <div class="shrink-0 border-t border-white/10 pt-3 text-xs tracking-wide text-slate-400">
+    <div class="border-t border-white/10 pt-3 text-xs tracking-wide text-slate-400">
       <span v-if="until > 0">距 {{ siteConfig.nextAnniversaryLabel }} · {{ until }} 天</span>
       <span v-else-if="until === 0" class="text-sky-300">今天 · {{ siteConfig.nextAnniversaryLabel }}</span>
     </div>
