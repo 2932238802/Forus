@@ -75,10 +75,10 @@ void main(){
   float hU = texture2D(u_height, v_uv - vec2(0.0, u_texel.y)).r;
   float hD = texture2D(u_height, v_uv + vec2(0.0, u_texel.y)).r;
   vec2 grad = vec2(hR - hL, hD - hU);
-  vec2 uv = v_uv + grad * 0.6;
+  vec2 uv = v_uv + grad * 0.18;
   vec4 col = texture2D(u_img, uv);
-  // 高光：坡度产生亮边
-  float spec = clamp((hR - hL) * 4.0, -0.3, 0.6);
+  // 高光：坡度产生亮边（柔和）
+  float spec = clamp((hR - hL) * 1.5, -0.12, 0.22);
   col.rgb += spec;
   gl_FragColor = col;
 }`
@@ -185,18 +185,18 @@ function resize() {
   if (gl) gl.viewport(0, 0, W, H)
 }
 
-// 点击湖面：在该位置注入波纹
+// 点击湖面：在该位置注入波纹（轻柔涟漪）
 function onClick(e: MouseEvent) {
   const nx = e.clientX / W
   const ny = e.clientY / H
-  disturb(nx, ny, 0.6, 6)
+  disturb(nx, ny, 0.18, 4)
 }
 
-// 暴露给父组件：大波纹（点狮子）
+// 暴露给父组件：稍大波纹（点狮子），但依然温和
 function bigDrop(clientX: number, clientY: number) {
   const nx = clientX / W
   const ny = clientY / H
-  disturb(nx, ny, 2.5, 14)
+  disturb(nx, ny, 0.5, 8)
 }
 defineExpose({ bigDrop })
 
