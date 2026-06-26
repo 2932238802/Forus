@@ -6,7 +6,7 @@ import { useIdentity, type IdentityKey } from '~/composables/useIdentity'
 
 definePageMeta({ middleware: 'unlocked' })
 
-const { memos, addMemo, toggleMemo, removeMemo } = useMemo()
+const { memos, addMemo, toggleMemo, updateMemoText, removeMemo } = useMemo()
 const { byMemo, addComment, removeComment } = useMemoComments()
 const { identityKey, identities, nameOf, load: loadIdentity } = useIdentity()
 
@@ -34,6 +34,25 @@ function submitMemo() {
 
 function confirmRemove(id: string, name: string) {
   if (confirm(`删除备忘「${name}」？`)) removeMemo(id)
+}
+
+// ---- 编辑备忘录内容 ----
+const editingId = ref<string | null>(null)
+const editText = ref('')
+
+function startEdit(id: string, current: string) {
+  editingId.value = id
+  editText.value = current
+}
+function cancelEdit() {
+  editingId.value = null
+  editText.value = ''
+}
+async function saveEdit(id: string) {
+  if (!editText.value.trim()) return
+  await updateMemoText(id, editText.value)
+  editingId.value = null
+  editText.value = ''
 }
 
 // ---- 评论 ----
@@ -114,34 +133,63 @@ function fmt(at: number) {
               <input
                 type="checkbox"
                 :checked="m.done"
-                :disabled="!isOwnView"
+                :disabled="!isOwnView || editingId === m.id"
                 class="h-4 w-4 shrink-0 accent-sky-500 disabled:opacity-50"
                 @change="toggleMemo(m.id, !m.done)"
               />
-              <span class="flex-1 whitespace-pre-wrap break-words text-sm leading-relaxed" :class="m.done ? 'text-slate-500 line-through' : 'text-slate-200'">
-                {{ m.text }}
-              </span>
-              <!-- 评论数 / 展开 -->
-              <button
-                class="flex shrink-0 items-center gap-1 text-[11px] text-slate-500 transition hover:text-sky-300"
-                title="评论"
-                @click="toggleComments(m.id)"
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5">
-                  <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-                <span v-if="byMemo(m.id).length">{{ byMemo(m.id).length }}</span>
-              </button>
-              <!-- 删除：只有自己的能删 -->
-              <button
-                v-if="isOwnView"
-                class="shrink-0 text-slate-600 opacity-0 transition hover:text-rose-400 group-hover:opacity-100"
-                @click="confirmRemove(m.id, m.text)"
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4">
-                  <path d="M18 6L6 18M6 6l12 12" stroke-linecap="round" />
-                </svg>
-              </button>
+
+              <!-- 编辑态：输入框 -->
+              <template v-if="editingId === m.id">
+                <input
+                  v-model="editText"
+                  type="text"
+                  maxlength="200"
+                  class="min-w-0 flex-1 rounded-lg border border-sky-400/50 bg-white/5 px-2.5 py-1.5 text-sm text-slate-100 outline-none focus:border-sky-400"
+                  @keyup.enter="saveEdit(m.id)"
+                  @keyup.esc="cancelEdit"
+                />
+                <button class="shrink-0 rounded-lg bg-sky-500 px-2.5 py-1.5 text-xs font-medium text-white transition hover:bg-sky-400 active:scale-95" @click="saveEdit(m.id)">保存</button>
+                <button class="shrink-0 rounded-lg px-2 py-1.5 text-xs text-slate-400 hover:bg-white/5" @click="cancelEdit">取消</button>
+              </template>
+
+              <!-- 普通态：文字 + 操作 -->
+              <template v-else>
+                <span class="flex-1 whitespace-pre-wrap break-words text-sm leading-relaxed" :class="m.done ? 'text-slate-500 line-through' : 'text-slate-200'">
+                  {{ m.text }}
+                </span>
+                <!-- 编辑：只有自己的能改 -->
+                <button
+                  v-if="isOwnView"
+                  class="shrink-0 text-slate-600 opacity-0 transition hover:text-sky-300 group-hover:opacity-100"
+                  title="编辑"
+                  @click="startEdit(m.id, m.text)"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5">
+                    <path d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4 12.5-12.5z" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </button>
+                <!-- 评论数 / 展开 -->
+                <button
+                  class="flex shrink-0 items-center gap-1 text-[11px] text-slate-500 transition hover:text-sky-300"
+                  title="评论"
+                  @click="toggleComments(m.id)"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5">
+                    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                  <span v-if="byMemo(m.id).length">{{ byMemo(m.id).length }}</span>
+                </button>
+                <!-- 删除：只有自己的能删 -->
+                <button
+                  v-if="isOwnView"
+                  class="shrink-0 text-slate-600 opacity-0 transition hover:text-rose-400 group-hover:opacity-100"
+                  @click="confirmRemove(m.id, m.text)"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4">
+                    <path d="M18 6L6 18M6 6l12 12" stroke-linecap="round" />
+                  </svg>
+                </button>
+              </template>
             </div>
 
             <!-- 评论区 -->

@@ -42,6 +42,12 @@ export function useMemo() {
     await supabase.from('memos').update({ done }).eq('id', id)
   }
 
+  /** 修改备忘录文字内容 */
+  async function updateMemoText(id: string, text: string) {
+    if (!text.trim()) return
+    await supabase.from('memos').update({ text: text.trim() }).eq('id', id)
+  }
+
   async function removeMemo(id: string) {
     await supabase.from('memos').delete().eq('id', id)
   }
@@ -59,5 +65,5 @@ export function useMemo() {
     if (channel) supabase.removeChannel(channel)
   })
 
-  return { memos, addMemo, toggleMemo, removeMemo }
+  return { memos, addMemo, toggleMemo, updateMemoText, removeMemo }
 }
