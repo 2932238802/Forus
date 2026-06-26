@@ -154,9 +154,12 @@ function fmt(at: number) {
 
               <!-- 普通态：文字 + 操作 -->
               <template v-else>
-                <span class="flex-1 whitespace-pre-wrap break-words text-sm leading-relaxed" :class="m.done ? 'text-slate-500 line-through' : 'text-slate-200'">
-                  {{ m.text }}
-                </span>
+                <div class="min-w-0 flex-1">
+                  <span class="block whitespace-pre-wrap break-words text-sm leading-relaxed" :class="m.done ? 'text-slate-500 line-through' : 'text-slate-200'">
+                    {{ m.text }}
+                  </span>
+                  <span class="mt-0.5 block text-[10px] tabular-nums text-slate-500">记于 {{ fmt(m.at) }}</span>
+                </div>
                 <!-- 编辑：只有自己的能改 -->
                 <button
                   v-if="isOwnView"
