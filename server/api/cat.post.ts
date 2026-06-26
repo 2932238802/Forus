@@ -38,6 +38,14 @@ export default defineEventHandler(async (event) => {
   // 2) 组装基础背景数据
   const contextParts: string[] = []
 
+  // 当前时间（北京时间），让小猫能在深夜自然提醒早点睡
+  const bjNow = new Date(Date.now() + 8 * 3600 * 1000) // UTC+8
+  const hour = bjNow.getUTCHours()
+  const period = hour < 6 ? '凌晨' : hour < 11 ? '早上' : hour < 14 ? '中午' : hour < 18 ? '下午' : hour < 23 ? '晚上' : '深夜'
+  contextParts.push(
+    `- 现在是北京时间 ${String(hour).padStart(2, '0')}:${String(bjNow.getUTCMinutes()).padStart(2, '0')}（${period}）。如果已经很晚了（深夜或凌晨），可以温柔地提醒岑姐姐早点睡、别熬夜。`,
+  )
+
   // 在一起天数 / 纪念日 / 生日
   const start = new Date(siteConfig.startDate + 'T00:00:00')
   const days = Math.floor((Date.now() - start.getTime()) / 86400000) + 1
