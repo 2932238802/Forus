@@ -1,8 +1,10 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useSupabaseClient } from '#imports'
+import type { IdentityKey } from '~/composables/useIdentity'
 
 export interface Memo {
   id: string
+  owner: IdentityKey // 这条备忘录是谁的
   text: string
   done: boolean
   at: number
@@ -13,7 +15,13 @@ export function useMemo() {
   const memos = ref<Memo[]>([])
 
   function mapRow(r: any): Memo {
-    return { id: r.id, text: r.text, done: !!r.done, at: new Date(r.created_at).getTime() }
+    return {
+      id: r.id,
+      owner: (r.owner === 'you' || r.owner === 'npy') ? r.owner : 'npy',
+      text: r.text,
+      done: !!r.done,
+      at: new Date(r.created_at).getTime(),
+    }
   }
 
   async function fetchAll() {
@@ -24,9 +32,10 @@ export function useMemo() {
     if (!error && data) memos.value = data.map(mapRow)
   }
 
-  async function addMemo(text: string) {
+  /** 新增一条备忘录到指定人名下 */
+  async function addMemo(owner: IdentityKey, text: string) {
     if (!text.trim()) return
-    await supabase.from('memos').insert({ text: text.trim(), done: false })
+    await supabase.from('memos').insert({ owner, text: text.trim(), done: false })
   }
 
   async function toggleMemo(id: string, done: boolean) {
@@ -40,9 +49,9 @@ export function useMemo() {
   let channel: any = null
   onMounted(() => {
     fetchAll()
-    const name = `memos-changes-${Math.random().toString(36).slice(2, 9)}`
+    const channelName = `memos-changes-${Math.random().toString(36).slice(2, 9)}`
     channel = supabase
-      .channel(name)
+      .channel(channelName)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'memos' }, () => fetchAll())
       .subscribe()
   })
