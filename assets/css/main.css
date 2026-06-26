@@ -6,67 +6,30 @@ html {
   scroll-behavior: smooth;
 }
 
-/* ============ 主题变量（默认夜空蓝） ============ */
+/* ============ 主题变量 ============ */
+/* 主题一：星空流星（默认，夜空蓝） */
 :root,
-[data-theme='night'] {
+[data-theme='star'] {
   --bg-1: #1b2444;
   --bg-2: #1e293b;
   --bg-3: #172033;
-  --glow-a: 56, 189, 248;   /* 天蓝 */
-  --glow-b: 129, 140, 248;  /* 靛 */
+  --glow-a: 56, 189, 248;
+  --glow-b: 129, 140, 248;
   --accent: #38bdf8;
   --accent-2: #7dd3fc;
   --accent-rgb: 56, 189, 248;
 }
-[data-theme='aurora'] {
-  --bg-1: #241b3f;
-  --bg-2: #2a2150;
-  --bg-3: #1c1733;
-  --glow-a: 167, 139, 250;
-  --glow-b: 236, 72, 153;
-  --accent: #a78bfa;
-  --accent-2: #c4b5fd;
-  --accent-rgb: 167, 139, 250;
-}
-[data-theme='forest'] {
-  --bg-1: #122a26;
-  --bg-2: #14332c;
-  --bg-3: #0e2420;
-  --glow-a: 52, 211, 153;
-  --glow-b: 45, 212, 191;
-  --accent: #34d399;
-  --accent-2: #6ee7b7;
-  --accent-rgb: 52, 211, 153;
-}
-[data-theme='rose'] {
-  --bg-1: #3a1f2b;
-  --bg-2: #45222f;
-  --bg-3: #2c1822;
-  --glow-a: 251, 113, 133;
-  --glow-b: 244, 114, 182;
-  --accent: #fb7185;
-  --accent-2: #fda4af;
-  --accent-rgb: 251, 113, 133;
-}
-[data-theme='amber'] {
-  --bg-1: #3a2c14;
-  --bg-2: #443418;
-  --bg-3: #2b2010;
-  --glow-a: 251, 191, 36;
-  --glow-b: 251, 146, 60;
-  --accent: #fbbf24;
-  --accent-2: #fcd34d;
-  --accent-rgb: 251, 191, 36;
-}
-[data-theme='mono'] {
-  --bg-1: #20252e;
-  --bg-2: #262c36;
-  --bg-3: #181c23;
-  --glow-a: 148, 163, 184;
-  --glow-b: 100, 116, 139;
-  --accent: #94a3b8;
-  --accent-2: #cbd5e1;
-  --accent-rgb: 148, 163, 184;
+
+/* 主题二：樱花飘落（暖粉夜樱） */
+[data-theme='sakura'] {
+  --bg-1: #3a2230;
+  --bg-2: #432838;
+  --bg-3: #2c1a26;
+  --glow-a: 251, 127, 175;
+  --glow-b: 244, 164, 196;
+  --accent: #fb7faf;
+  --accent-2: #fdb8d2;
+  --accent-rgb: 251, 127, 175;
 }
 
 body {
@@ -185,4 +148,18 @@ body {
 }
 .animate-ping-once {
   animation: heartPop 0.6s ease-in-out;
+}
+
+
+/* ============ 樱花主题专属背景图（淡淡铺底） ============ */
+[data-theme='sakura'] .night-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url('/sakura-bg.webp');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0.15; /* 背景图透明度：越小越淡，可在 0.08~0.3 之间调 */
+  pointer-events: none;
 }

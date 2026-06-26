@@ -3,22 +3,17 @@ import { ref, onMounted } from 'vue'
 export interface Theme {
   id: string
   name: string
-  // 用于预览的小色块
-  swatch: string
+  swatch: string // 预览色块
 }
 
-// 可选主题（配色通过 body 上的 data-theme 切换，具体色值在 main.css 定义）
+// 两个主题：星空流星 / 樱花飘落
 export const THEMES: Theme[] = [
-  { id: 'night', name: '夜空蓝', swatch: '#38bdf8' },
-  { id: 'aurora', name: '极光紫', swatch: '#a78bfa' },
-  { id: 'forest', name: '深林绿', swatch: '#34d399' },
-  { id: 'rose', name: '玫瑰金', swatch: '#fb7185' },
-  { id: 'amber', name: '暖阳橙', swatch: '#fbbf24' },
-  { id: 'mono', name: '极简灰', swatch: '#94a3b8' },
+  { id: 'star', name: '星空流星', swatch: '#38bdf8' },
+  { id: 'sakura', name: '樱花飘落', swatch: '#fb7faf' },
 ]
 
 const STORAGE_KEY = 'forus_theme'
-const current = ref<string>('night')
+const current = ref<string>('star')
 
 export function useTheme() {
   function apply(id: string) {
@@ -34,9 +29,11 @@ export function useTheme() {
   }
 
   onMounted(() => {
-    let saved = 'night'
+    let saved = 'star'
     try {
-      saved = localStorage.getItem(STORAGE_KEY) || 'night'
+      saved = localStorage.getItem(STORAGE_KEY) || 'star'
+      // 兼容旧的主题 id（night/aurora 等都归到 star）
+      if (saved !== 'star' && saved !== 'sakura') saved = 'star'
     } catch {
       /* ignore */
     }

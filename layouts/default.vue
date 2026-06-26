@@ -1,14 +1,17 @@
 <script setup lang="ts">
-// 所有页面共享的布局：流星夜空背景 + 主题切换器
+// 所有页面共享的布局：背景特效随主题切换（星空流星 / 樱花飘落）
+import { useTheme } from '~/composables/useTheme'
+const { current } = useTheme()
 </script>
 
 <template>
   <div class="relative min-h-screen w-screen">
-    <!-- 背景：主题夜空 + Canvas 流星雨（含鼠标彗星尾） -->
+    <!-- 背景：主题底色 + 随主题切换的 Canvas 特效 -->
     <div class="pointer-events-none fixed inset-0 -z-10">
       <div class="absolute inset-0 night-bg" />
       <ClientOnly>
-        <MeteorCanvas :interactive="true" />
+        <SakuraCanvas v-if="current === 'sakura'" />
+        <MeteorCanvas v-else :interactive="true" />
       </ClientOnly>
       <div
         class="absolute right-0 top-0 h-[55vh] w-[50vw] opacity-30"
