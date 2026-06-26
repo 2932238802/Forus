@@ -38,7 +38,7 @@ async function onSend() {
       <!-- 浮动小猫按钮（右下角） -->
       <button
         class="fixed bottom-4 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full border border-white/15 bg-black/50 text-3xl shadow-lg backdrop-blur-md transition hover:scale-110 active:scale-95"
-        :title="open ? '收起奶糖' : '找奶糖聊天'"
+        :title="open ? '收起尚锦' : '找尚锦聊天'"
         @click="open = !open"
       >
         <span class="transition-transform" :class="open ? 'scale-90' : ''">{{ open ? '🐾' : '🐱' }}</span>
@@ -54,7 +54,7 @@ async function onSend() {
           <div class="flex shrink-0 items-center gap-2 border-b border-white/10 px-4 py-3">
             <span class="text-xl">🐱</span>
             <div class="flex-1">
-              <p class="text-sm font-medium text-slate-100">奶糖</p>
+              <p class="text-sm font-medium text-slate-100">尚锦</p>
               <p class="text-[10px] text-slate-500">{{ thinking ? '正在想…' : '在的，陪着姐姐～' }}</p>
             </div>
             <button class="text-slate-500 hover:text-slate-300" @click="open = false">
@@ -65,7 +65,7 @@ async function onSend() {
           <!-- 消息列表 -->
           <div ref="listRef" class="flex-1 space-y-3 overflow-y-auto p-4">
             <div v-if="!messages.length" class="pt-6 text-center text-xs text-slate-600">
-              喵～ 姐姐想和奶糖说点什么吗？🐱
+              喵～ 姐姐想和尚锦说点什么吗？🐱
             </div>
             <div
               v-for="(m, i) in messages"
@@ -83,7 +83,7 @@ async function onSend() {
               </div>
             </div>
             <div v-if="thinking" class="flex justify-start">
-              <div class="rounded-2xl rounded-tl-sm bg-white/10 px-3 py-2 text-sm text-slate-400">奶糖在想… 🐾</div>
+              <div class="rounded-2xl rounded-tl-sm bg-white/10 px-3 py-2 text-sm text-slate-400">尚锦在想… 🐾</div>
             </div>
           </div>
 
@@ -94,7 +94,7 @@ async function onSend() {
               type="text"
               maxlength="500"
               :disabled="thinking"
-              placeholder="和奶糖说说话…"
+              placeholder="和尚锦说说话…"
               class="min-w-0 flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-100 outline-none focus:border-sky-400 disabled:opacity-50"
             />
             <button
