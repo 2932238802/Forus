@@ -7,6 +7,7 @@ const links = [
   { to: '/memo', label: '不能忘的事' },
   { to: '/goals', label: '!TARGET!' },
   { to: '/likes', label: 'Like And Unlike' },
+  { to: '/letters', label: '给未来的信' },
 ]
 
 const open = ref(false)
