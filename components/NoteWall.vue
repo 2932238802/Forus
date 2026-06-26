@@ -1,13 +1,24 @@
 <script setup lang="ts">
-import { ref, nextTick, watch } from 'vue'
+import { ref, nextTick, watch, onMounted } from 'vue'
 import { siteConfig } from '~/data/site'
 import { useNotes } from '~/composables/useNotes'
 import { useMedia } from '~/composables/useMedia'
+import { useIdentity } from '~/composables/useIdentity'
 
 const { notes, addText, addImage, removeNote } = useNotes()
 const { uploadFile } = useMedia()
+const { identityKey, nameOf, load: loadIdentity } = useIdentity()
 
-const author = ref(siteConfig.npy) // 默认在野
+// 当前身份的显示名作为发送者；未选身份时回退到 npy
+const author = ref(siteConfig.npy)
+onMounted(() => {
+  loadIdentity()
+  if (identityKey.value) author.value = nameOf(identityKey.value)
+})
+watch(identityKey, (k) => {
+  if (k) author.value = nameOf(k)
+})
+
 const text = ref('')
 const sending = ref(false)
 const listRef = ref<HTMLElement | null>(null)
@@ -101,17 +112,9 @@ function fmtTime(at: number) {
 
     <!-- 输入区 -->
     <div class="mt-3 shrink-0 space-y-2">
-      <div class="flex gap-1.5 text-xs">
-        <button
-          v-for="name in [siteConfig.npy, siteConfig.you]"
-          :key="name"
-          type="button"
-          class="rounded-full px-2.5 py-1 transition"
-          :class="author === name ? 'bg-sky-500 text-white' : 'bg-white/5 text-slate-400'"
-          @click="author = name"
-        >
-          {{ name }}
-        </button>
+      <div class="flex items-center gap-1.5 px-1 text-[11px] text-slate-500">
+        <span class="inline-block h-1.5 w-1.5 rounded-full bg-sky-400"></span>
+        以 <span class="text-slate-300">{{ author }}</span> 的身份发送
       </div>
       <form class="flex items-center gap-2" @submit.prevent="sendText">
         <!-- 发图 -->
