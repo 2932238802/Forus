@@ -73,6 +73,9 @@ function onOpened() {
         <PokeAlert :active="entered" />
       </ClientOnly>
 
+      <!-- 专属小猫（仅在野可见） -->
+      <CatChat />
+
       <!-- 纪念日彩蛋：特殊日子自动撒花 -->
       <ClientOnly>
         <Celebration

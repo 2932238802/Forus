@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed, watch, onUnmounted } from 'vue'
 import type { MediaItem } from '~/types'
 import { useMedia } from '~/composables/useMedia'
 
@@ -75,6 +75,65 @@ async function save() {
 async function confirmRemove(item: MediaItem) {
   if (confirm('确定删除这张吗？')) await removeItem(item.id)
 }
+
+// ============ 大图查看器（Lightbox）============
+const viewerIndex = ref<number | null>(null)
+const viewing = computed(() =>
+  viewerIndex.value !== null ? media.value[viewerIndex.value] ?? null : null,
+)
+
+function openViewer(item: MediaItem) {
+  const i = media.value.findIndex((m) => m.id === item.id)
+  if (i >= 0) viewerIndex.value = i
+}
+function closeViewer() {
+  viewerIndex.value = null
+}
+function prev() {
+  if (viewerIndex.value === null) return
+  viewerIndex.value = (viewerIndex.value - 1 + media.value.length) % media.value.length
+}
+function next() {
+  if (viewerIndex.value === null) return
+  viewerIndex.value = (viewerIndex.value + 1) % media.value.length
+}
+
+// 键盘：← → 切换，Esc 关闭；查看器打开时锁定页面滚动
+function onKey(e: KeyboardEvent) {
+  if (viewerIndex.value === null) return
+  if (e.key === 'Escape') closeViewer()
+  else if (e.key === 'ArrowLeft') prev()
+  else if (e.key === 'ArrowRight') next()
+}
+watch(viewerIndex, (v) => {
+  if (typeof window === 'undefined') return
+  if (v !== null) {
+    window.addEventListener('keydown', onKey)
+    document.body.style.overflow = 'hidden'
+  } else {
+    window.removeEventListener('keydown', onKey)
+    document.body.style.overflow = ''
+  }
+})
+onUnmounted(() => {
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('keydown', onKey)
+    document.body.style.overflow = ''
+  }
+})
+
+// 手机：左右滑动切换
+let touchStartX = 0
+function onTouchStart(e: TouchEvent) {
+  touchStartX = e.changedTouches[0].clientX
+}
+function onTouchEnd(e: TouchEvent) {
+  const dx = e.changedTouches[0].clientX - touchStartX
+  if (Math.abs(dx) > 50) {
+    if (dx > 0) prev()
+    else next()
+  }
+}
 </script>
 
 <template>
@@ -98,8 +157,27 @@ async function confirmRemove(item: MediaItem) {
           :key="item.id"
           class="group relative break-inside-avoid overflow-hidden rounded-xl bg-white/5 shadow-sm"
         >
-          <img v-if="item.kind === 'image'" :src="item.url" :alt="item.title" loading="lazy" class="w-full" />
-          <video v-else :src="item.url" controls preload="metadata" class="w-full" />
+          <img
+            v-if="item.kind === 'image'"
+            :src="item.url"
+            :alt="item.title"
+            loading="lazy"
+            class="w-full cursor-zoom-in transition group-hover:opacity-95"
+            @click="openViewer(item)"
+          />
+          <div v-else class="relative">
+            <video :src="item.url" preload="metadata" class="w-full" />
+            <!-- 视频点击遮罩：打开大图播放 -->
+            <button
+              class="absolute inset-0 flex items-center justify-center bg-black/20 transition hover:bg-black/30"
+              title="播放"
+              @click="openViewer(item)"
+            >
+              <span class="flex h-12 w-12 items-center justify-center rounded-full bg-black/50 backdrop-blur">
+                <svg viewBox="0 0 24 24" fill="currentColor" class="ml-0.5 h-6 w-6 text-white"><path d="M8 5v14l11-7z" /></svg>
+              </span>
+            </button>
+          </div>
 
           <figcaption v-if="item.title || item.date" class="px-2.5 py-1.5">
             <p v-if="item.title" class="truncate text-xs font-medium text-slate-200">{{ item.title }}</p>
@@ -163,5 +241,85 @@ async function confirmRemove(item: MediaItem) {
         </div>
       </div>
     </Teleport>
+
+    <!-- 大图查看器 Lightbox -->
+    <Teleport to="body">
+      <Transition name="viewer-fade">
+        <div
+          v-if="viewing"
+          class="fixed inset-0 z-[300] flex items-center justify-center"
+          @touchstart="onTouchStart"
+          @touchend="onTouchEnd"
+        >
+          <!-- 背景 -->
+          <div class="absolute inset-0 bg-black/90" @click="closeViewer" />
+
+          <!-- 关闭 -->
+          <button
+            class="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
+            title="关闭 (Esc)"
+            @click="closeViewer"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round" /></svg>
+          </button>
+
+          <!-- 上一张 -->
+          <button
+            v-if="media.length > 1"
+            class="absolute left-2 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20 sm:left-5"
+            title="上一张 (←)"
+            @click.stop="prev"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-6 w-6"><path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          </button>
+          <!-- 下一张 -->
+          <button
+            v-if="media.length > 1"
+            class="absolute right-2 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20 sm:right-5"
+            title="下一张 (→)"
+            @click.stop="next"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-6 w-6"><path d="M9 18l6-6-6-6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          </button>
+
+          <!-- 内容 -->
+          <div class="relative z-[1] flex max-h-[90vh] max-w-[92vw] flex-col items-center" @click.stop>
+            <img
+              v-if="viewing.kind === 'image'"
+              :src="viewing.url"
+              :alt="viewing.title"
+              class="max-h-[82vh] max-w-[92vw] rounded-lg object-contain"
+            />
+            <video
+              v-else
+              :src="viewing.url"
+              controls
+              autoplay
+              class="max-h-[82vh] max-w-[92vw] rounded-lg"
+            />
+            <!-- 标题/日期 -->
+            <div v-if="viewing.title || viewing.date" class="mt-3 text-center">
+              <p v-if="viewing.title" class="text-sm font-medium text-white">{{ viewing.title }}</p>
+              <p v-if="viewing.date" class="text-xs tabular-nums text-white/50">{{ viewing.date }}</p>
+            </div>
+            <!-- 序号 -->
+            <p v-if="media.length > 1" class="mt-2 text-[11px] tabular-nums text-white/40">
+              {{ (viewerIndex ?? 0) + 1 }} / {{ media.length }}
+            </p>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
+
+<style scoped>
+.viewer-fade-enter-active,
+.viewer-fade-leave-active {
+  transition: opacity 0.25s ease;
+}
+.viewer-fade-enter-from,
+.viewer-fade-leave-to {
+  opacity: 0;
+}
+</style>

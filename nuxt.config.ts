@@ -10,6 +10,8 @@ export default defineNuxtConfig({
     passphrase: process.env.NUXT_PASSPHRASE || '622',
     // Cookie 签名密钥：从环境变量读取（生产务必在 .env 配置 NUXT_AUTH_SECRET）
     authSecret: process.env.NUXT_AUTH_SECRET || 'forus-dev-secret-change-me',
+    // DeepSeek API Key（小猫 AI）
+    deepseekKey: process.env.NUXT_DEEPSEEK_KEY || '',
   },
 
   // 关闭 appManifest，消除 dev 下 "#app-manifest" 预转换报错
