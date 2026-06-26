@@ -55,6 +55,8 @@ export function useMedia() {
   }
 
   async function updateItem(id: string, patch: Partial<MediaItem>) {
+    // 若更换了文件（url 变化），清理被替换掉的旧 Storage 文件
+    const prev = media.value.find((m) => m.id === id)
     const { error } = await supabase
       .from('media')
       .update({
@@ -65,10 +67,36 @@ export function useMedia() {
       })
       .eq('id', id)
     if (error) throw error
+    if (prev && patch.url && patch.url !== prev.url) {
+      const oldPath = extractStoragePath(prev.url)
+      if (oldPath) {
+        const { error: storageErr } = await supabase.storage.from('media').remove([oldPath])
+        if (storageErr) console.warn('[useMedia] 清理旧 Storage 文件失败：', storageErr.message)
+      }
+    }
+  }
+
+  /** 从 Supabase Storage 公链中解析出 bucket 内的文件路径；非本站存储返回 null */
+  function extractStoragePath(url: string): string | null {
+    // 公链格式：.../storage/v1/object/public/media/<path>
+    const marker = '/storage/v1/object/public/media/'
+    const idx = url.indexOf(marker)
+    if (idx === -1) return null
+    return decodeURIComponent(url.slice(idx + marker.length))
   }
 
   async function removeItem(id: string) {
-    await supabase.from('media').delete().eq('id', id)
+    // 删行前先拿到 url，以便清理 Storage 里的实际文件，避免空间泄漏
+    const target = media.value.find((m) => m.id === id)
+    const { error } = await supabase.from('media').delete().eq('id', id)
+    if (error) throw error
+    // 仅清理本站 Storage 内的文件（外链不处理）
+    const path = target ? extractStoragePath(target.url) : null
+    if (path) {
+      // 删文件失败不阻断主流程，记录到控制台即可
+      const { error: storageErr } = await supabase.storage.from('media').remove([path])
+      if (storageErr) console.warn('[useMedia] 清理 Storage 文件失败：', storageErr.message)
+    }
   }
 
   // 实时同步（每个实例用唯一频道名，避免重复订阅同名频道导致报错）

@@ -12,6 +12,10 @@ function submit() {
   addGoal(title.value)
   title.value = ''
 }
+
+function confirmRemove(id: string, name: string) {
+  if (confirm(`删除目标「${name}」？`)) removeGoal(id)
+}
 </script>
 
 <template>
@@ -26,6 +30,7 @@ function submit() {
           <input
             v-model="title"
             type="text"
+            maxlength="100"
             placeholder="想一起做的事…"
             class="min-w-0 flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-100 outline-none focus:border-sky-400"
           />
@@ -57,7 +62,7 @@ function submit() {
             </span>
             <button
               class="absolute right-2 top-2 text-slate-600 opacity-0 transition hover:text-rose-400 group-hover:opacity-100"
-              @click="removeGoal(g.id)"
+              @click="confirmRemove(g.id, g.title)"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4">
                 <path d="M18 6L6 18M6 6l12 12" stroke-linecap="round" />

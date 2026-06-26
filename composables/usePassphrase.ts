@@ -1,42 +1,50 @@
-import { ref, onMounted } from 'vue'
-import { siteConfig } from '~/data/site'
+import { ref } from 'vue'
 
-const STORAGE_KEY = 'forus_unlocked'
+// 模块级单例：所有组件共享同一份解锁状态
+const unlocked = ref(false)
+const ready = ref(false) // 是否已完成首次服务端状态校验
+let inflight: Promise<void> | null = null
 
 export function usePassphrase() {
-  const unlocked = ref(false)
-
-  onMounted(() => {
-    try {
-      if (localStorage.getItem(STORAGE_KEY) === '1') unlocked.value = true
-    } catch {
-      /* ignore */
-    }
-  })
-
-  /** 校验暗号，正确则解锁并记住本设备 */
-  function tryUnlock(input: string): boolean {
-    if (input.trim() === siteConfig.passphrase) {
-      unlocked.value = true
+  /** 向服务端确认当前是否已解锁（校验 HttpOnly Cookie），只查一次 */
+  async function refresh() {
+    if (inflight) return inflight
+    inflight = (async () => {
       try {
-        localStorage.setItem(STORAGE_KEY, '1')
+        const res = await $fetch<{ unlocked: boolean }>('/api/status')
+        unlocked.value = !!res.unlocked
       } catch {
-        /* ignore */
+        unlocked.value = false
+      } finally {
+        ready.value = true
       }
-      return true
-    }
-    return false
+    })()
+    return inflight
   }
 
-  /** 上锁（清除本设备记忆） */
-  function lock() {
-    unlocked.value = false
+  /** 提交暗号到服务端校验；正确则服务端下发签名 Cookie */
+  async function tryUnlock(input: string): Promise<boolean> {
     try {
-      localStorage.removeItem(STORAGE_KEY)
+      await $fetch('/api/unlock', {
+        method: 'POST',
+        body: { passphrase: input.trim() },
+      })
+      unlocked.value = true
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  /** 上锁：请求服务端清除 Cookie */
+  async function lock() {
+    try {
+      await $fetch('/api/lock', { method: 'POST' })
     } catch {
       /* ignore */
     }
+    unlocked.value = false
   }
 
-  return { unlocked, tryUnlock, lock }
+  return { unlocked, ready, refresh, tryUnlock, lock }
 }

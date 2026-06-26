@@ -47,6 +47,9 @@ async function onPickImage(e: Event) {
 function isMe(a: string) {
   return a === siteConfig.you
 }
+function confirmRemove(id: string) {
+  if (confirm('删除这条消息？')) removeNote(id)
+}
 function fmtTime(at: number) {
   const d = new Date(at)
   return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
@@ -83,7 +86,7 @@ function fmtTime(at: number) {
           <!-- 删除 -->
           <button
             class="shrink-0 text-slate-600 opacity-0 transition hover:text-rose-400 group-hover:opacity-100"
-            @click="removeNote(n.id)"
+            @click="confirmRemove(n.id)"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5">
               <path d="M18 6L6 18M6 6l12 12" stroke-linecap="round" />
@@ -126,6 +129,7 @@ function fmtTime(at: number) {
         <input
           v-model="text"
           type="text"
+          maxlength="500"
           :placeholder="sending ? '发送中…' : '说点什么…'"
           :disabled="sending"
           class="min-w-0 flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-100 outline-none focus:border-sky-400"

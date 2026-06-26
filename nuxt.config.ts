@@ -4,6 +4,14 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   telemetry: false,
 
+  // 服务端私有配置（绝不会打包进前端）
+  runtimeConfig: {
+    // 共用暗号：从环境变量读取，默认回退到 622（生产请在 .env 配置 NUXT_PASSPHRASE）
+    passphrase: process.env.NUXT_PASSPHRASE || '622',
+    // Cookie 签名密钥：从环境变量读取（生产务必在 .env 配置 NUXT_AUTH_SECRET）
+    authSecret: process.env.NUXT_AUTH_SECRET || 'forus-dev-secret-change-me',
+  },
+
   // 关闭 appManifest，消除 dev 下 "#app-manifest" 预转换报错
   experimental: {
     appManifest: false,

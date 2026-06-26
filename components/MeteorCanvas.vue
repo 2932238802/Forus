@@ -192,15 +192,50 @@ function onResize() {
   resize()
 }
 
+// 标签页切到后台时暂停动画（省电省 CPU），回到前台恢复
+function onVisibility() {
+  if (document.hidden) {
+    if (raf) {
+      cancelAnimationFrame(raf)
+      raf = 0
+    }
+  } else if (!raf) {
+    raf = requestAnimationFrame(draw)
+  }
+}
+
 onMounted(() => {
+  // 尊重系统「减弱动态效果」偏好：开启时只画静态星空，不跑动画循环
+  const reduceMotion =
+    typeof window !== 'undefined' &&
+    window.matchMedia &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
   setup()
+
+  if (reduceMotion) {
+    // 仅绘制一帧静态星空
+    if (ctx) {
+      for (const s of stars) {
+        ctx.beginPath()
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2)
+        ctx.fillStyle = `rgba(255,255,255,${s.base})`
+        ctx.fill()
+      }
+    }
+    window.addEventListener('resize', onResize)
+    return
+  }
+
   raf = requestAnimationFrame(draw)
   window.addEventListener('resize', onResize)
+  document.addEventListener('visibilitychange', onVisibility)
   if (props.interactive) window.addEventListener('mousemove', onMouseMove)
 })
 onUnmounted(() => {
-  cancelAnimationFrame(raf)
+  if (raf) cancelAnimationFrame(raf)
   window.removeEventListener('resize', onResize)
+  document.removeEventListener('visibilitychange', onVisibility)
   window.removeEventListener('mousemove', onMouseMove)
 })
 </script>

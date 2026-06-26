@@ -1,24 +1,22 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useMediaQuery } from '@vueuse/core'
+import { usePassphrase } from '~/composables/usePassphrase'
 
 const entered = ref(false)
 const showCurtain = ref(false)
 const mounted = ref(false)
 
+const { unlocked, refresh } = usePassphrase()
+
 // 桌面端（≥768px）不折叠、用宫格
 const isDesktop = useMediaQuery('(min-width: 768px)')
 
-onMounted(() => {
-  const unlocked = (() => {
-    try {
-      return localStorage.getItem('forus_unlocked') === '1'
-    } catch {
-      return false
-    }
-  })()
-  entered.value = unlocked
-  showCurtain.value = !unlocked
+onMounted(async () => {
+  // 向服务端确认是否已解锁（校验 HttpOnly 签名 Cookie）
+  await refresh()
+  entered.value = unlocked.value
+  showCurtain.value = !unlocked.value
   mounted.value = true
 })
 

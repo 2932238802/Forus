@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { usePassphrase } from '~/composables/usePassphrase'
 
 const links = [
   { to: '/', label: 'Home' },
@@ -9,6 +10,14 @@ const links = [
 ]
 
 const open = ref(false)
+
+const { lock } = usePassphrase()
+
+async function onLock() {
+  open.value = false
+  await lock() // 服务端清除签名 Cookie
+  if (import.meta.client) location.href = '/' // 回首页，重新显示封面
+}
 </script>
 
 <template>
@@ -30,6 +39,18 @@ const open = ref(false)
       >
         <span class="whitespace-nowrap">{{ l.label }}</span>
       </NuxtLink>
+
+      <!-- 锁定（清除本设备解锁状态，回到封面） -->
+      <button
+        v-for="x in (open ? [1] : [])"
+        :key="'lock'"
+        type="button"
+        class="flex items-center gap-2.5 rounded-full border border-white/10 bg-black/50 px-4 py-2 text-sm text-slate-400 backdrop-blur-md transition hover:bg-rose-500/20 hover:text-rose-300"
+        :style="{ transitionDelay: `${links.length * 40}ms` }"
+        @click="onLock"
+      >
+        <span class="whitespace-nowrap">🔒 锁定</span>
+      </button>
     </transition-group>
 
     <!-- 浮动主按钮 -->

@@ -24,6 +24,10 @@ function submit(owner: string, kind: 'like' | 'dislike') {
 function items(owner: string, kind: 'like' | 'dislike') {
   return likes.value.filter((l) => l.owner === owner && l.kind === kind)
 }
+
+function confirmRemove(id: string, name: string) {
+  if (confirm(`删除「${name}」？`)) removeLike(id)
+}
 </script>
 
 <template>
@@ -49,6 +53,7 @@ function items(owner: string, kind: 'like' | 'dislike') {
               <input
                 v-model="inputs[owner].like"
                 type="text"
+                maxlength="60"
                 placeholder="喜欢的东西…"
                 class="min-w-0 flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-100 outline-none focus:border-emerald-400"
               />
@@ -61,7 +66,7 @@ function items(owner: string, kind: 'like' | 'dislike') {
                 class="group flex items-center gap-2 rounded-lg border border-emerald-400/15 bg-emerald-400/5 px-3 py-1.5"
               >
                 <span class="flex-1 text-sm text-slate-200">{{ l.text }}</span>
-                <button class="shrink-0 text-slate-600 opacity-0 transition hover:text-rose-400 group-hover:opacity-100" @click="removeLike(l.id)">
+                <button class="shrink-0 text-slate-600 opacity-0 transition hover:text-rose-400 group-hover:opacity-100" @click="confirmRemove(l.id, l.text)">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round" /></svg>
                 </button>
               </li>
@@ -77,6 +82,7 @@ function items(owner: string, kind: 'like' | 'dislike') {
               <input
                 v-model="inputs[owner].dislike"
                 type="text"
+                maxlength="60"
                 placeholder="不喜欢的东西…"
                 class="min-w-0 flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-100 outline-none focus:border-rose-400"
               />
@@ -89,7 +95,7 @@ function items(owner: string, kind: 'like' | 'dislike') {
                 class="group flex items-center gap-2 rounded-lg border border-rose-400/15 bg-rose-400/5 px-3 py-1.5"
               >
                 <span class="flex-1 text-sm text-slate-200">{{ l.text }}</span>
-                <button class="shrink-0 text-slate-600 opacity-0 transition hover:text-rose-400 group-hover:opacity-100" @click="removeLike(l.id)">
+                <button class="shrink-0 text-slate-600 opacity-0 transition hover:text-rose-400 group-hover:opacity-100" @click="confirmRemove(l.id, l.text)">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round" /></svg>
                 </button>
               </li>

@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import { siteConfig } from '~/data/site'
-import { togetherDays, daysUntil, formatDate } from '~/utils/date'
+import { togetherDays, nextAnniversary, formatDate } from '~/utils/date'
 import { usePassphrase } from '~/composables/usePassphrase'
 
 const days = togetherDays()
-const until = daysUntil(siteConfig.nextAnniversary)
+// 自动计算下一个还没到的周年（过期后自动滚到下一年）
+const anniv = nextAnniversary()
 
 const { lock } = usePassphrase()
-function leave() {
-  lock()
-  if (import.meta.client) location.reload()
+async function leave() {
+  await lock()
+  if (import.meta.client) location.href = '/'
 }
 </script>
 
@@ -41,8 +42,8 @@ function leave() {
     </div>
 
     <div class="border-t border-white/10 pt-3 text-xs tracking-wide text-slate-400">
-      <span v-if="until > 0">距 {{ siteConfig.nextAnniversaryLabel }} · {{ until }} 天</span>
-      <span v-else-if="until === 0" class="text-sky-300">今天 · {{ siteConfig.nextAnniversaryLabel }}</span>
+      <span v-if="anniv.daysLeft > 0">距 {{ anniv.label }} · {{ anniv.daysLeft }} 天</span>
+      <span v-else class="text-sky-300">🎉 今天就是 {{ anniv.label }} 纪念日！</span>
     </div>
   </div>
 </template>

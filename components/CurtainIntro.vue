@@ -11,6 +11,7 @@ const askPass = ref(false)
 const gone = ref(false)
 const pass = ref('')
 const wrong = ref(false)
+const submitting = ref(false)
 
 function onEnter() {
   if (entering.value || askPass.value) return
@@ -28,8 +29,12 @@ function finish() {
   }, 700)
 }
 
-function submit() {
-  if (tryUnlock(pass.value)) {
+async function submit() {
+  if (submitting.value) return
+  submitting.value = true
+  const ok = await tryUnlock(pass.value)
+  submitting.value = false
+  if (ok) {
     wrong.value = false
     askPass.value = false
     finish()
@@ -59,7 +64,7 @@ function submit() {
       </h1>
       <div class="mt-8 h-px w-12 bg-white/30" />
       <p class="mt-6 text-xs font-light tracking-[0.25em] text-slate-400">
-        我 是LosAngelous
+        我是 LosAngelous
       </p>
     </div>
 
@@ -79,9 +84,10 @@ function submit() {
         />
         <button
           type="submit"
-          class="accent-bg mt-3 rounded-xl px-8 py-2.5 text-sm font-medium text-white transition hover:opacity-90 active:scale-95"
+          :disabled="submitting"
+          class="accent-bg mt-3 rounded-xl px-8 py-2.5 text-sm font-medium text-white transition hover:opacity-90 active:scale-95 disabled:opacity-50"
         >
-          进入
+          {{ submitting ? '验证中…' : '进入' }}
         </button>
         <p v-if="wrong" class="mt-3 text-xs text-rose-300">暗号不对哦</p>
       </form>
