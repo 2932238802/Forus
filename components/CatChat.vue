@@ -35,9 +35,9 @@ async function onSend() {
 <template>
   <ClientOnly>
     <div v-if="visible">
-      <!-- 浮动小猫按钮（右下角） -->
+      <!-- 浮动小猫按钮（右侧中下，避开右下角其他按钮） -->
       <button
-        class="fixed bottom-4 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full border border-white/15 bg-black/50 text-3xl shadow-lg backdrop-blur-md transition hover:scale-110 active:scale-95"
+        class="fixed bottom-28 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full border border-white/15 bg-black/50 text-3xl shadow-lg backdrop-blur-md transition hover:scale-110 active:scale-95"
         :title="open ? '收起尚锦' : '找尚锦聊天'"
         @click="open = !open"
       >
@@ -48,7 +48,7 @@ async function onSend() {
       <Transition name="cat-pop">
         <div
           v-if="open"
-          class="fixed bottom-20 right-4 z-50 flex h-[60vh] max-h-[520px] w-[min(360px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-white/10 bg-slate-900/95 shadow-2xl backdrop-blur-md"
+          class="fixed bottom-44 right-5 z-50 flex h-[60vh] max-h-[520px] w-[min(360px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-white/10 bg-slate-900/95 shadow-2xl backdrop-blur-md"
         >
           <!-- 头部 -->
           <div class="flex shrink-0 items-center gap-2 border-b border-white/10 px-4 py-3">
