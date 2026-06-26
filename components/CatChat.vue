@@ -8,8 +8,8 @@ const { messages, thinking, send } = useCat()
 
 onMounted(() => loadIdentity())
 
-// 只有「在野」能看到小猫
-const visible = computed(() => identityKey.value === 'npy')
+// 小猫可见（你和在野都能看到，方便一起逗猫）
+const visible = computed(() => identityKey.value !== null)
 
 const open = ref(false)
 const input = ref('')
