@@ -151,53 +151,37 @@ function onTouchEnd(e: TouchEvent) {
     </div>
 
     <div class="flex-1 overflow-y-auto pr-1">
-      <div v-if="media.length" class="columns-2 gap-2.5 [&>*]:mb-2.5 sm:columns-3">
-        <figure
-          v-for="item in media"
+      <ul v-if="media.length" class="space-y-1.5">
+        <li
+          v-for="(item, idx) in media"
           :key="item.id"
-          class="group relative break-inside-avoid overflow-hidden rounded-xl bg-white/5 shadow-sm"
+          class="group flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 transition hover:bg-white/10"
         >
-          <img
-            v-if="item.kind === 'image'"
-            :src="item.url"
-            :alt="item.title"
-            loading="lazy"
-            class="w-full cursor-zoom-in transition group-hover:opacity-95"
-            @click="openViewer(item)"
-          />
-          <div v-else class="relative">
-            <video :src="item.url" preload="metadata" class="w-full" />
-            <!-- 视频点击遮罩：打开大图播放 -->
-            <button
-              class="absolute inset-0 flex items-center justify-center bg-black/20 transition hover:bg-black/30"
-              title="播放"
-              @click="openViewer(item)"
-            >
-              <span class="flex h-12 w-12 items-center justify-center rounded-full bg-black/50 backdrop-blur">
-                <svg viewBox="0 0 24 24" fill="currentColor" class="ml-0.5 h-6 w-6 text-white"><path d="M8 5v14l11-7z" /></svg>
-              </span>
-            </button>
-          </div>
-
-          <figcaption v-if="item.title || item.date" class="px-2.5 py-1.5">
-            <p v-if="item.title" class="truncate text-xs font-medium text-slate-200">{{ item.title }}</p>
+          <!-- 序号 -->
+          <span class="w-6 shrink-0 text-center text-xs tabular-nums text-slate-600">{{ idx + 1 }}</span>
+          <!-- 类型图标 -->
+          <span class="shrink-0 text-base">{{ item.kind === 'video' ? '🎬' : '🖼️' }}</span>
+          <!-- 标题 + 日期（点击打开大图） -->
+          <button class="min-w-0 flex-1 text-left" @click="openViewer(item)">
+            <p class="truncate text-sm text-slate-200 transition group-hover:text-sky-300">
+              {{ item.title || (item.kind === 'video' ? '未命名视频' : '未命名图片') }}
+            </p>
             <p v-if="item.date" class="text-[10px] tabular-nums text-slate-500">{{ item.date }}</p>
-          </figcaption>
-
-          <div class="absolute right-1.5 top-1.5 flex gap-1 opacity-0 transition group-hover:opacity-100">
-            <button class="flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-slate-600 shadow backdrop-blur hover:bg-sky hover:text-white" @click="openEdit(item)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3 w-3">
-                <path d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4 12.5-12.5z" stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
-            </button>
-            <button class="flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-slate-600 shadow backdrop-blur hover:bg-rose-500 hover:text-white" @click="confirmRemove(item)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3 w-3">
-                <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m2 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6" stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
-            </button>
-          </div>
-        </figure>
-      </div>
+          </button>
+          <!-- 查看 -->
+          <button class="shrink-0 text-slate-500 transition hover:text-sky-300" title="查看" @click="openViewer(item)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" stroke-linecap="round" stroke-linejoin="round" /><circle cx="12" cy="12" r="3" /></svg>
+          </button>
+          <!-- 编辑 -->
+          <button class="shrink-0 text-slate-600 opacity-0 transition hover:text-sky-300 group-hover:opacity-100" title="编辑" @click="openEdit(item)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4 12.5-12.5z" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          </button>
+          <!-- 删除 -->
+          <button class="shrink-0 text-slate-600 opacity-0 transition hover:text-rose-400 group-hover:opacity-100" title="删除" @click="confirmRemove(item)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round" /></svg>
+          </button>
+        </li>
+      </ul>
 
       <div v-else class="flex h-full flex-col items-center justify-center text-center text-slate-600">
         <span class="text-2xl">🖼️</span>

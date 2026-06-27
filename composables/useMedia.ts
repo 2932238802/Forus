@@ -23,7 +23,7 @@ export function useMedia() {
     const { data, error } = await supabase
       .from('media')
       .select('*')
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: true })
     if (!error && data) media.value = data.map(mapRow)
     loading.value = false
   }

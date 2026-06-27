@@ -23,7 +23,15 @@ interface Petal {
   opacity: number
 }
 
+// 鼠标拖尾花瓣
+interface Trail {
+  x: number; y: number; vx: number; vy: number
+  size: number; rot: number; vr: number
+  life: number; maxLife: number; color: string
+}
+
 const petals: Petal[] = []
+const trails: Trail[] = []
 // 樱花粉色系
 const COLORS = ['#ffd1e3', '#ffb7d5', '#fb7faf', '#ffc6dd', '#ff9ec4']
 
@@ -51,6 +59,32 @@ function buildPetals() {
   petals.length = 0
   const count = Math.min(70, Math.floor((W * H) / 24000))
   for (let i = 0; i < count; i++) petals.push(makePetal(true))
+}
+
+// 鼠标移动：在光标处撒出小花瓣，按移动速度生成数量
+let lastX = 0
+let lastY = 0
+function onMouseMove(e: MouseEvent) {
+  const dx = e.clientX - lastX
+  const dy = e.clientY - lastY
+  lastX = e.clientX
+  lastY = e.clientY
+  const speed = Math.hypot(dx, dy)
+  const n = Math.min(3, Math.floor(speed / 10))
+  for (let i = 0; i < n; i++) {
+    trails.push({
+      x: e.clientX + rand(-4, 4),
+      y: e.clientY + rand(-4, 4),
+      vx: dx * 0.04 + rand(-0.6, 0.6),
+      vy: dy * 0.04 + rand(0.2, 1.2),
+      size: rand(5, 10),
+      rot: rand(0, Math.PI * 2),
+      vr: rand(-0.1, 0.1),
+      life: 0,
+      maxLife: rand(40, 70),
+      color: COLORS[Math.floor(Math.random() * COLORS.length)],
+    })
+  }
 }
 
 function setup() {
@@ -104,6 +138,32 @@ function draw() {
       Object.assign(p, makePetal(false))
     }
   }
+  // 鼠标拖尾花瓣
+  for (const tr of trails) {
+    tr.vy += 0.04 // 轻微重力
+    tr.vx *= 0.97
+    tr.x += tr.vx
+    tr.y += tr.vy
+    tr.rot += tr.vr
+    tr.life++
+    const a = Math.max(0, 1 - tr.life / tr.maxLife)
+    ctx.save()
+    ctx.translate(tr.x, tr.y)
+    ctx.rotate(tr.rot)
+    ctx.globalAlpha = a
+    ctx.fillStyle = tr.color
+    const s = tr.size
+    ctx.beginPath()
+    ctx.moveTo(0, 0)
+    ctx.bezierCurveTo(s * 0.3, -s * 0.5, s * 0.7, -s * 0.5, s, 0)
+    ctx.bezierCurveTo(s * 0.7, s * 0.2, s * 0.4, s * 0.4, s * 0.5, s)
+    ctx.bezierCurveTo(s * 0.3, s * 0.5, s * 0.1, s * 0.3, 0, 0)
+    ctx.fill()
+    ctx.restore()
+  }
+  for (let i = trails.length - 1; i >= 0; i--) {
+    if (trails[i].life >= trails[i].maxLife) trails.splice(i, 1)
+  }
   raf = requestAnimationFrame(draw)
 }
 
@@ -134,11 +194,13 @@ onMounted(() => {
   raf = requestAnimationFrame(draw)
   window.addEventListener('resize', onResize)
   document.addEventListener('visibilitychange', onVisibility)
+  window.addEventListener('mousemove', onMouseMove)
 })
 onUnmounted(() => {
   if (raf) cancelAnimationFrame(raf)
   window.removeEventListener('resize', onResize)
   document.removeEventListener('visibilitychange', onVisibility)
+  window.removeEventListener('mousemove', onMouseMove)
 })
 </script>
 
