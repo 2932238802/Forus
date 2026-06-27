@@ -6,16 +6,21 @@ import { useIdentity, type IdentityKey } from '~/composables/useIdentity'
 definePageMeta({ middleware: 'unlocked' })
 
 const { likes, addLike, updateLike, removeLike } = useLikes()
-const { identityKey, identities, nameOf, load: loadIdentity } = useIdentity()
+const { identityKey, identities, nameOf, partnerOf, load: loadIdentity } = useIdentity()
 
 onMounted(() => loadIdentity())
 
-// 当前查看谁的（默认自己）
-const viewing = ref<IdentityKey>('npy')
+// 当前查看谁的（默认看「对方」——本页记录的是「我眼中对方的喜好」）
+const viewing = ref<IdentityKey>('you')
 onMounted(() => {
-  if (identityKey.value) viewing.value = identityKey.value
+  const ta = partnerOf(identityKey.value)
+  if (ta) viewing.value = ta
 })
-const isOwnView = computed(() => identityKey.value === viewing.value)
+// 是否在看「对方」的（看对方才能增删——我来维护对方的喜好档案）
+const isPartnerView = computed(() => {
+  const ta = partnerOf(identityKey.value)
+  return ta !== null && viewing.value === ta
+})
 
 // 当前分类
 const cat = ref<LikeCategory>('food')
@@ -36,8 +41,9 @@ function countOf(category: LikeCategory) {
 const inputs = ref<Record<LikeKind, string>>({ like: '', dislike: '' })
 function submit(kind: LikeKind) {
   const t = inputs.value[kind]
-  if (!t?.trim() || !identityKey.value) return
-  addLike(identityKey.value, kind, cat.value, t)
+  if (!t?.trim() || !isPartnerView.value) return
+  // 加到「对方」名下（viewing 即对方）
+  addLike(viewing.value, kind, cat.value, t)
   inputs.value[kind] = ''
 }
 
@@ -74,7 +80,7 @@ function flip(id: string, current: LikeKind) {
       <div class="mb-4 px-1">
         <h1 class="text-lg font-medium tracking-wide text-slate-100">Like And Unlike</h1>
         <p class="mt-1 text-xs text-slate-500">
-          {{ isOwnView ? '记录你喜欢和不喜欢的东西' : `看看 ${nameOf(viewing)} 的喜好` }}
+          {{ isPartnerView ? `记录 ${nameOf(viewing)} 喜欢和不喜欢的东西` : `看看 ${nameOf(viewing)} 的喜好` }}
           · 拖动卡片可在喜欢 / 不喜欢之间移动
         </p>
       </div>
@@ -90,7 +96,7 @@ function flip(id: string, current: LikeKind) {
           @click="viewing = who.key"
         >
           {{ who.name }}
-          <span v-if="who.key === identityKey" class="text-[10px] opacity-70">(我)</span>
+          <span v-if="who.key === partnerOf(identityKey)" class="text-[10px] opacity-70">(可记录)</span>
         </button>
       </div>
 
@@ -125,7 +131,7 @@ function flip(id: string, current: LikeKind) {
           <p class="mb-3 flex items-center gap-1.5 text-xs font-medium text-emerald-400">
             <span>♥</span> 喜欢
           </p>
-          <form v-if="isOwnView" class="mb-3 flex gap-2" @submit.prevent="submit('like')">
+          <form v-if="isPartnerView" class="mb-3 flex gap-2" @submit.prevent="submit('like')">
             <input
               v-model="inputs.like"
               type="text"
@@ -148,7 +154,7 @@ function flip(id: string, current: LikeKind) {
               <button class="shrink-0 text-slate-600 transition hover:text-rose-400" title="移到不喜欢" @click="flip(l.id, 'like')">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round" /></svg>
               </button>
-              <button v-if="isOwnView" class="shrink-0 text-slate-600 opacity-0 transition hover:text-rose-400 group-hover:opacity-100" @click="confirmRemove(l.id, l.text)">
+              <button v-if="isPartnerView" class="shrink-0 text-slate-600 opacity-0 transition hover:text-rose-400 group-hover:opacity-100" @click="confirmRemove(l.id, l.text)">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round" /></svg>
               </button>
             </li>
@@ -167,7 +173,7 @@ function flip(id: string, current: LikeKind) {
           <p class="mb-3 flex items-center gap-1.5 text-xs font-medium text-rose-400">
             <span>✕</span> 不喜欢
           </p>
-          <form v-if="isOwnView" class="mb-3 flex gap-2" @submit.prevent="submit('dislike')">
+          <form v-if="isPartnerView" class="mb-3 flex gap-2" @submit.prevent="submit('dislike')">
             <input
               v-model="inputs.dislike"
               type="text"
@@ -190,7 +196,7 @@ function flip(id: string, current: LikeKind) {
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5"><path d="M19 12H5M11 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round" /></svg>
               </button>
               <span class="flex-1 break-words text-sm text-slate-200">{{ l.text }}</span>
-              <button v-if="isOwnView" class="shrink-0 text-slate-600 opacity-0 transition hover:text-rose-400 group-hover:opacity-100" @click="confirmRemove(l.id, l.text)">
+              <button v-if="isPartnerView" class="shrink-0 text-slate-600 opacity-0 transition hover:text-rose-400 group-hover:opacity-100" @click="confirmRemove(l.id, l.text)">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round" /></svg>
               </button>
             </li>
