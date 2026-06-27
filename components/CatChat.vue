@@ -2,16 +2,9 @@
 import { ref, computed, nextTick, watch, onMounted } from 'vue'
 import { useCat } from '~/composables/useCat'
 import { useIdentity } from '~/composables/useIdentity'
-import { useDraggable } from '~/composables/useDraggable'
 
 const { identityKey, load: loadIdentity } = useIdentity()
 const { messages, thinking, send } = useCat()
-
-// 小猫按钮可拖动（默认右侧中下）
-const { style: catStyle, onPointerDown, justDragged } = useDraggable('forus_cat_pos', {
-  right: 20,
-  bottom: 112,
-})
 
 onMounted(() => loadIdentity())
 
@@ -38,9 +31,7 @@ async function onSend() {
   await send(t)
 }
 
-// 点击小猫：刚拖动过则忽略，否则开关对话框
 function onCatClick() {
-  if (justDragged.value) return
   open.value = !open.value
 }
 </script>
@@ -48,11 +39,10 @@ function onCatClick() {
 <template>
   <ClientOnly>
     <div v-if="visible">
-      <!-- 浮动小猫按钮（可拖动） -->
+      <!-- 浮动小猫按钮（固定右下角，避开主题按钮上方） -->
       <button
-        :style="catStyle"
-        class="fixed z-50 flex h-14 w-14 touch-none items-center justify-center rounded-full border border-white/15 bg-black/50 text-3xl shadow-lg backdrop-blur-md transition hover:scale-110 active:scale-95"
-        :title="open ? '收起尚锦' : '找尚锦聊天（可拖动）'"
+        class="fixed bottom-20 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full border border-white/15 bg-black/50 text-3xl shadow-lg backdrop-blur-md transition hover:scale-110 active:scale-95"
+        :title="open ? '收起尚锦' : '找尚锦聊天'"
         @pointerdown="onPointerDown"
         @click="onCatClick"
       >
@@ -63,7 +53,7 @@ function onCatClick() {
       <Transition name="cat-pop">
         <div
           v-if="open"
-          class="fixed bottom-24 right-5 z-50 flex h-[60vh] max-h-[520px] w-[min(360px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-white/10 bg-slate-900/95 shadow-2xl backdrop-blur-md"
+          class="fixed bottom-40 right-4 z-50 flex h-[60vh] max-h-[520px] w-[min(360px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-white/10 bg-slate-900/95 shadow-2xl backdrop-blur-md"
         >
           <!-- 头部 -->
           <div class="flex shrink-0 items-center gap-2 border-b border-white/10 px-4 py-3">

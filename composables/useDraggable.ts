@@ -1,20 +1,27 @@
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, type Ref } from 'vue'
 
 /**
  * 让一个浮动元素可拖动（鼠标 + 触摸），位置记到 localStorage。
- * 用法：
- *   const { style, onPointerDown, dragging, justDragged } = useDraggable('forus_cat_pos', { right: 20, bottom: 112 })
- *   <button :style="style" @pointerdown="onPointerDown" @click="justDragged ? null : doSomething()">
  *
- * 拖动用 left/top 定位；未拖动过时用传入的默认位置(right/bottom/left/top)。
+ * 两种用法：
+ * 1) 拖动手柄 = 被定位元素本身（如小猫按钮）：
+ *      const { style, onPointerDown } = useDraggable('key', { right: 20, bottom: 112 })
+ *      <button :style="style" @pointerdown="onPointerDown">
+ *
+ * 2) 拖动手柄 ≠ 被定位元素（如导航：容器是定位元素，月亮按钮是手柄）：
+ *      const containerRef = ref<HTMLElement|null>(null)
+ *      const { style, onPointerDown } = useDraggable('key', { left:16, bottom:16 }, containerRef)
+ *      <div ref="containerRef" :style="style"> ... <button @pointerdown="onPointerDown"> </div>
+ *    传入 containerRef 后，拖动以容器的位置/尺寸为准，避免手柄与容器错位。
  */
 export function useDraggable(
   storageKey: string,
   fallback: { right?: number; bottom?: number; left?: number; top?: number } = {},
+  containerRef?: Ref<HTMLElement | null>,
 ) {
   const pos = ref<{ left: number; top: number } | null>(null)
   const dragging = ref(false)
-  const justDragged = ref(false) // 刚拖动过（用于阻止误触发 click）
+  const justDragged = ref(false)
 
   let startX = 0
   let startY = 0
@@ -47,7 +54,9 @@ export function useDraggable(
   }
 
   function onPointerDown(e: PointerEvent) {
-    const el = e.currentTarget as HTMLElement
+    // 被定位的元素：优先用 containerRef（容器），否则用事件源本身
+    const el = (containerRef?.value ?? (e.currentTarget as HTMLElement))
+    if (!el) return
     const rect = el.getBoundingClientRect()
     elSize = { w: rect.width, h: rect.height }
     originLeft = rect.left
@@ -56,6 +65,7 @@ export function useDraggable(
     startY = e.clientY
     justDragged.value = false
     dragging.value = true
+    // 把当前真实位置同步给 pos（从 right/bottom 锚定平滑切到 left/top 锚定，避免跳位）
     pos.value = { left: originLeft, top: originTop }
     window.addEventListener('pointermove', onPointerMove)
     window.addEventListener('pointerup', onPointerUp)
@@ -78,12 +88,10 @@ export function useDraggable(
       } catch {
         /* ignore */
       }
-      // 稍后清除标记，让本次 click 被忽略
       setTimeout(() => (justDragged.value = false), 50)
     }
   }
 
-  // style 自动跟随 pos 变化
   const style = computed<Record<string, string>>(() => {
     if (pos.value) {
       return {

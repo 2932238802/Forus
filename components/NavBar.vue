@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { usePassphrase } from '~/composables/usePassphrase'
-import { useDraggable } from '~/composables/useDraggable'
 
 const links = [
   { to: '/', label: 'Home' },
@@ -13,17 +12,6 @@ const links = [
 
 const open = ref(false)
 
-// 导航按钮可拖动（默认左下角）
-const { style: navStyle, onPointerDown, justDragged } = useDraggable('forus_nav_pos', {
-  left: 16,
-  bottom: 16,
-})
-
-function onMoonClick() {
-  if (justDragged.value) return
-  open.value = !open.value
-}
-
 const { lock } = usePassphrase()
 
 async function onLock() {
@@ -34,7 +22,7 @@ async function onLock() {
 </script>
 
 <template>
-  <div :style="navStyle" class="fixed z-50">
+  <div class="fixed bottom-4 left-4 z-50">
     <!-- 展开的菜单（向上弹出） -->
     <transition-group
       name="pop"
@@ -68,10 +56,9 @@ async function onLock() {
 
     <!-- 浮动主按钮（可拖动） -->
     <button
-      class="flex h-12 w-12 touch-none items-center justify-center rounded-full border border-white/10 bg-black/50 text-2xl backdrop-blur-md transition hover:scale-105 active:scale-95"
-      :title="open ? '收起' : '去别处看看（可拖动）'"
-      @pointerdown="onPointerDown"
-      @click="onMoonClick"
+      class="flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-black/50 text-2xl backdrop-blur-md transition hover:scale-105 active:scale-95"
+      :title="open ? '收起' : '去别处看看'"
+      @click="open = !open"
     >
       <span class="transition-transform duration-300" :class="open ? 'rotate-45' : ''">
         {{ open ? '✕' : '🌙' }}
