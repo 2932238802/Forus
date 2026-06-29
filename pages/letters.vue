@@ -5,7 +5,7 @@ import { useIdentity, type IdentityKey } from '~/composables/useIdentity'
 
 definePageMeta({ middleware: 'unlocked' })
 
-const { letters, sendLetter, removeLetter } = useLetters()
+const { letters, sendLetter, updateLetter, removeLetter } = useLetters()
 const { identityKey, partnerOf, nameOf, load: loadIdentity } = useIdentity()
 
 onMounted(() => loadIdentity())
@@ -20,13 +20,22 @@ const todayStr = computed(() => {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
 })
 
-// 写信表单
+// 写信 / 编辑表单
 const showEditor = ref(false)
+const editingId = ref<string | null>(null) // null=新建，否则=正在编辑的信 id
 const form = ref({ title: '', content: '', unlockDate: '' })
 const saving = ref(false)
 
 function openEditor() {
+  editingId.value = null
   form.value = { title: '', content: '', unlockDate: '' }
+  showEditor.value = true
+}
+
+// 重新编辑一封未到期的信
+function openEdit(l: any) {
+  editingId.value = l.id
+  form.value = { title: l.title, content: l.content, unlockDate: l.unlockDate }
   showEditor.value = true
 }
 
@@ -42,10 +51,18 @@ async function save() {
   }
   saving.value = true
   try {
-    await sendLetter(me.value, ta.value, form.value.title, form.value.content, form.value.unlockDate)
+    if (editingId.value) {
+      await updateLetter(editingId.value, {
+        title: form.value.title,
+        content: form.value.content,
+        unlockDate: form.value.unlockDate,
+      })
+    } else {
+      await sendLetter(me.value, ta.value, form.value.title, form.value.content, form.value.unlockDate)
+    }
     showEditor.value = false
   } catch (err: any) {
-    alert('寄出失败：' + (err?.message || err))
+    alert((editingId.value ? '保存失败：' : '寄出失败：') + (err?.message || err))
   } finally {
     saving.value = false
   }
@@ -161,8 +178,18 @@ function fmtDate(s: string) {
                     <template v-else>{{ nameOf(ta) }} 将在 {{ fmtDate(l.unlockDate) }} 开启 · 还有 {{ daysToUnlock(l.unlockDate) }} 天</template>
                   </p>
                 </button>
+                <!-- 编辑：仅未到期（对方还没拆）可改 -->
+                <button
+                  v-if="!isUnlocked(l.unlockDate)"
+                  class="shrink-0 text-slate-600 opacity-0 transition hover:text-sky-300 group-hover:opacity-100"
+                  title="重新编辑"
+                  @click="openEdit(l)"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4 12.5-12.5z" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                </button>
                 <button
                   class="shrink-0 text-slate-600 opacity-0 transition hover:text-rose-400 group-hover:opacity-100"
+                  title="撤回（删除）"
                   @click="confirmRemove(l.id)"
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round" /></svg>
@@ -185,7 +212,7 @@ function fmtDate(s: string) {
       <div v-if="showEditor" class="fixed inset-0 z-[200] flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="showEditor = false" />
         <div class="relative w-full max-w-md rounded-2xl border border-white/10 bg-slate-900 p-6 shadow-2xl">
-          <h3 class="text-base font-semibold text-slate-100">写给 {{ nameOf(ta) || 'TA' }} 的信</h3>
+          <h3 class="text-base font-semibold text-slate-100">{{ editingId ? '重新编辑' : '写给' }} {{ nameOf(ta) || 'TA' }} 的信</h3>
 
           <input
             v-model="form.title"
@@ -217,7 +244,7 @@ function fmtDate(s: string) {
               class="rounded-full bg-sky-500 px-5 py-2 text-sm font-medium text-white hover:bg-sky-400 active:scale-95 disabled:opacity-50"
               @click="save"
             >
-              {{ saving ? '寄出中…' : '寄出' }}
+              {{ saving ? (editingId ? '保存中…' : '寄出中…') : (editingId ? '保存' : '寄出') }}
             </button>
           </div>
         </div>

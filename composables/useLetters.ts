@@ -55,6 +55,19 @@ export function useLetters() {
     if (error) throw error
   }
 
+  /** 重新编辑信（仅未到期时调用，由页面控制） */
+  async function updateLetter(
+    id: string,
+    patch: { title?: string; content?: string; unlockDate?: string },
+  ) {
+    const body: any = {}
+    if (patch.title !== undefined) body.title = patch.title.trim()
+    if (patch.content !== undefined) body.content = patch.content.trim()
+    if (patch.unlockDate !== undefined) body.unlock_date = patch.unlockDate
+    const { error } = await supabase.from('letters').update(body).eq('id', id)
+    if (error) throw error
+  }
+
   async function removeLetter(id: string) {
     await supabase.from('letters').delete().eq('id', id)
   }
@@ -72,7 +85,7 @@ export function useLetters() {
     if (channel) supabase.removeChannel(channel)
   })
 
-  return { letters, sendLetter, removeLetter }
+  return { letters, sendLetter, updateLetter, removeLetter }
 }
 
 /** 这封信是否已到解锁日期（今天 >= unlockDate） */
