@@ -8,6 +8,7 @@ const links = [
   { to: '/goals', label: '!TARGET!' },
   { to: '/likes', label: 'Like And Unlike' },
   { to: '/letters', label: '给未来的信' },
+  { to: '/calendar', label: 'Calendar' },
 ]
 
 const open = ref(false)
