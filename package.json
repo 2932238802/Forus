@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@nuxtjs/supabase": "^2.0.9",
+    "lunar-javascript": "^1.7.7",
     "nuxt": "^3.13.0",
     "vue": "^3.4.0",
     "vue-router": "^4.3.0"
