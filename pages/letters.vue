@@ -224,7 +224,7 @@ function fmtDate(s: string) {
           <textarea
             v-model="form.content"
             rows="6"
-            maxlength="2000"
+            maxlength="5000"
             placeholder="想对 TA 说的话…"
             class="mt-3 w-full resize-none rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm leading-relaxed text-slate-100 outline-none focus:border-sky-400"
           />
