@@ -67,9 +67,6 @@ function confirmRemove(id: string, name: string) {
         <h1 class="bg-gradient-to-r from-rose-300 via-pink-300 to-rose-400 bg-clip-text text-2xl font-semibold tracking-wide text-transparent">
           Adore!!
         </h1>
-        <p class="mt-1.5 text-xs text-slate-500">
-          {{ isPartnerView ? `写下 ${nameOf(viewing)} 的优点、很喜欢 TA 的地方 —— 用来加固喜欢 💗` : `看看有多少个喜欢 ${nameOf(viewing)} 的理由` }}
-        </p>
       </div>
 
       <!-- 切人 -->
@@ -158,7 +155,6 @@ function confirmRemove(id: string, name: string) {
 
       <!-- 空态 -->
       <div v-if="!list.length" class="night-card mt-2 py-12 text-center">
-        <div class="mb-2 text-4xl">💗</div>
         <p class="text-sm text-slate-400">
           {{ isPartnerView ? `还没写下 ${nameOf(viewing)} 的优点，从上面开始吧～` : `${nameOf(viewing)} 还没有被记录喜欢的理由` }}
         </p>
