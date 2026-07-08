@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { marked } from 'marked'
 import { useCalendar } from '~/composables/useCalendar'
 import { useWeather } from '~/composables/useWeather'
 import { Solar } from 'lunar-javascript'
+
+// Markdown 渲染配置：GFM + 换行即 <br>
+marked.setOptions({ gfm: true, breaks: true })
 
 definePageMeta({ middleware: 'unlocked' })
 
@@ -90,6 +94,12 @@ const ji = computed(() => selLunar.value.getDayJi().slice(0, 6))
 const weekday = computed(() => '星期' + WEEK[new Date(selected.value + 'T00:00:00').getDay()])
 const selMark = computed(() => byDate(selected.value))
 const isSelToday = computed(() => selected.value === todayStr)
+
+// 备注 Markdown → HTML（内容为二人私密，可信任源）
+const renderedNote = computed(() => {
+  const raw = selMark.value?.text
+  return raw ? (marked.parse(raw) as string) : ''
+})
 
 function prettyDate(s: string) {
   const [y, m, d] = s.split('-')
@@ -224,9 +234,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
                 {{ selMark ? '编辑' : '+ 添加' }}
               </button>
             </div>
-            <div v-if="selMark" class="rounded-xl border border-rose-400/20 bg-rose-500/5 p-3 text-sm leading-relaxed text-slate-200">
-              {{ selMark.text }}
-            </div>
+            <div v-if="selMark" class="md-body rounded-xl border border-rose-400/20 bg-rose-500/5 p-3 text-sm leading-relaxed text-slate-200" v-html="renderedNote" />
             <div v-else class="rounded-xl border border-dashed border-white/10 p-3 text-xs text-slate-600">
               这天还没有备注
             </div>
@@ -241,13 +249,13 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="showEditor = false" />
         <div class="relative w-full max-w-sm rounded-2xl border border-white/10 bg-slate-900 p-6 shadow-2xl">
           <h3 class="text-base font-semibold text-slate-100">{{ prettyDate(selected) }}</h3>
-          <p class="mt-1 text-xs text-slate-500">给这一天写点备注吧（留空则清除）</p>
+          <p class="mt-1 text-xs text-slate-500">支持 Markdown（**加粗**、# 标题、- 列表、&gt; 引用…）· 留空则清除</p>
           <textarea
             v-model="editText"
-            rows="4"
-            maxlength="200"
-            placeholder="这天发生了什么…"
-            class="mt-3 w-full resize-none rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm leading-relaxed text-slate-100 outline-none focus:border-sky-400"
+            rows="7"
+            maxlength="1000"
+            placeholder="这天发生了什么…（支持 Markdown）"
+            class="mt-3 w-full resize-none rounded-lg border border-white/10 bg-white/5 px-3 py-2 font-mono text-sm leading-relaxed text-slate-100 outline-none focus:border-sky-400"
           />
           <div class="mt-4 flex justify-end gap-2">
             <button class="rounded-full px-4 py-2 text-sm text-slate-400 hover:bg-white/5" @click="showEditor = false">取消</button>
@@ -277,4 +285,58 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
 .slide-next-leave-to { opacity: 0; transform: translateX(-30px); }
 .slide-prev-enter-from { opacity: 0; transform: translateX(-40px); }
 .slide-prev-leave-to { opacity: 0; transform: translateX(30px); }
+
+/* 备注 Markdown 排版（v-html 内容需用 :deep 命中） */
+.md-body :deep(> *:first-child) { margin-top: 0; }
+.md-body :deep(> *:last-child) { margin-bottom: 0; }
+.md-body :deep(h1),
+.md-body :deep(h2),
+.md-body :deep(h3) {
+  margin: 0.6em 0 0.3em;
+  font-weight: 600;
+  line-height: 1.3;
+  color: #e2e8f0;
+}
+.md-body :deep(h1) { font-size: 1.05rem; }
+.md-body :deep(h2) { font-size: 1rem; }
+.md-body :deep(h3) { font-size: 0.92rem; }
+.md-body :deep(p) { margin: 0.4em 0; }
+.md-body :deep(strong) { font-weight: 600; color: #f8fafc; }
+.md-body :deep(em) { font-style: italic; }
+.md-body :deep(del) { opacity: 0.6; }
+.md-body :deep(a) { color: #7dd3fc; text-decoration: underline; }
+.md-body :deep(a:hover) { color: #bae6fd; }
+.md-body :deep(ul),
+.md-body :deep(ol) { margin: 0.4em 0; padding-left: 1.25em; }
+.md-body :deep(ul) { list-style: disc; }
+.md-body :deep(ol) { list-style: decimal; }
+.md-body :deep(li) { margin: 0.15em 0; }
+.md-body :deep(blockquote) {
+  margin: 0.5em 0;
+  padding: 0.1em 0.8em;
+  border-left: 3px solid rgba(251, 113, 133, 0.5);
+  color: #cbd5e1;
+}
+.md-body :deep(code) {
+  padding: 0.1em 0.35em;
+  border-radius: 0.3rem;
+  background: rgba(255, 255, 255, 0.1);
+  font-family: ui-monospace, monospace;
+  font-size: 0.85em;
+}
+.md-body :deep(pre) {
+  margin: 0.5em 0;
+  padding: 0.7em 0.9em;
+  border-radius: 0.6rem;
+  background: rgba(0, 0, 0, 0.35);
+  overflow-x: auto;
+}
+.md-body :deep(pre code) { padding: 0; background: transparent; }
+.md-body :deep(hr) { margin: 0.7em 0; border: none; border-top: 1px solid rgba(255, 255, 255, 0.12); }
+.md-body :deep(img) { max-width: 100%; border-radius: 0.5rem; }
+.md-body :deep(table) { width: 100%; border-collapse: collapse; margin: 0.5em 0; }
+.md-body :deep(th),
+.md-body :deep(td) { border: 1px solid rgba(255, 255, 255, 0.12); padding: 0.3em 0.5em; text-align: left; }
+.md-body :deep(input[type='checkbox']) { margin-right: 0.4em; }
+
 </style>
