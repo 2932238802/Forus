@@ -23,6 +23,7 @@
 - 📝 **不能忘的事**（`/memo`）
 - 🎯 **!TARGET!**（`/goals`）：双人目标 / 心愿
 - 💗 **Like And Unlike**（`/likes`）：喜欢 & 不喜欢清单
+- 💗 **Adore!!**（`/adore`）：对方的优点 / 很喜欢对方的地方，用于加固喜欢
 - 🔄 **实时同步**：留言 / 媒体 / 里程碑通过 Supabase Realtime 多端同步
 
 ## 本地运行
@@ -51,6 +52,7 @@ npm run dev
 | `pages-tables.sql` | memo / goals / likes 等页面数据表 |
 | `upgrade-notes.sql` | notes 表升级（支持图片消息） |
 | `upgrade-likes.sql` | likes 表升级 |
+| `adores.sql` | Adore!! 表：对方的优点 / 很喜欢对方的地方 |
 
 ## 如何修改内容
 
