@@ -89,7 +89,7 @@ function confirmRemove(id: string, name: string) {
         <input
           v-model="input"
           type="text"
-          maxlength="120"
+          maxlength="2000"
           placeholder="TA 的一个优点 / 让你心动的地方…"
           class="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-slate-100 outline-none transition focus:border-rose-400"
         />
@@ -127,7 +127,7 @@ function confirmRemove(id: string, name: string) {
             <textarea
               v-model="editText"
               rows="2"
-              maxlength="120"
+              maxlength="2000"
               class="w-full resize-none rounded-lg border border-rose-400/40 bg-white/5 px-3 py-2 text-sm text-slate-100 outline-none focus:border-rose-400"
               @keydown.enter.prevent="saveEdit"
               @keydown.esc="cancelEdit"
