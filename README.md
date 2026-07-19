@@ -24,6 +24,7 @@
 - 🎯 **!TARGET!**（`/goals`）：双人目标 / 心愿
 - 💗 **Like And Unlike**（`/likes`）：喜欢 & 不喜欢清单
 - 💗 **Adore!!**（`/adore`）：对方的优点 / 很喜欢对方的地方，用于加固喜欢
+- ✦ **回忆日记**（`/diary`）：按日期留下共同的片段
 - 🔄 **实时同步**：留言 / 媒体 / 里程碑通过 Supabase Realtime 多端同步
 
 ## 本地运行
@@ -53,6 +54,7 @@ npm run dev
 | `upgrade-notes.sql` | notes 表升级（支持图片消息） |
 | `upgrade-likes.sql` | likes 表升级 |
 | `adores.sql` | Adore!! 表：对方的优点 / 很喜欢对方的地方 |
+| `diaries.sql` | 回忆日记表：共同片段与那年今日数据 |
 
 ## 如何修改内容
 
