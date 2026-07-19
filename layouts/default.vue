@@ -1,7 +1,11 @@
 <script setup lang="ts">
 // 所有页面共享的布局：背景特效随主题切换（星空流星 / 樱花飘落）
+import { computed } from 'vue'
 import { useTheme } from '~/composables/useTheme'
+import { todayCelebration } from '~/utils/date'
+
 const { current } = useTheme()
+const isNpyBirthday = computed(() => todayCelebration()?.kind === 'birthday-npy')
 </script>
 
 <template>
@@ -18,6 +22,11 @@ const { current } = useTheme()
         style="background: radial-gradient(circle at 100% 0%, rgba(var(--glow-a),0.25) 0%, rgba(var(--glow-a),0.08) 40%, transparent 70%)"
       />
     </div>
+
+    <!-- 在野生日：全站的轻量生日氛围，不阻塞任何操作 -->
+    <ClientOnly>
+      <BirthdayAtmosphere v-if="isNpyBirthday" />
+    </ClientOnly>
 
     <!-- 主题切换器 -->
     <ClientOnly>
