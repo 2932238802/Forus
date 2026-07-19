@@ -18,7 +18,7 @@ const open = ref(props.defaultOpen ?? false)
       :class="forceOpen ? 'cursor-default' : ''"
       @click="!forceOpen && (open = !open)"
     >
-      <h2 class="text-sm font-medium tracking-wide text-slate-300">{{ title }}</h2>
+      <h2 class="flex items-center gap-2 text-sm font-medium tracking-wide text-slate-200"><span class="h-1.5 w-1.5 rounded-full accent-bg" />{{ title }}</h2>
       <span class="flex items-center gap-2">
         <slot name="action" />
         <svg

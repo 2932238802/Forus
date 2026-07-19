@@ -77,12 +77,9 @@ function flip(id: string, current: LikeKind) {
   <div>
     <NavBar />
     <div class="mx-auto w-full max-w-[1600px] p-4 sm:p-6">
-      <div class="mb-4 px-1">
-        <h1 class="text-lg font-medium tracking-wide text-slate-100">Like And Unlike</h1>
-        <p class="mt-1 text-xs text-slate-500">
-          {{ isPartnerView ? `记录 ${nameOf(viewing)} 喜欢和不喜欢的东西` : `看看 ${nameOf(viewing)} 的喜好` }}
-          · 拖动卡片可在喜欢 / 不喜欢之间移动
-        </p>
+      <div class="mb-4 flex items-center justify-between px-1">
+        <h1 class="page-title">Like And Unlike</h1>
+        <span class="text-lg opacity-75">☯</span>
       </div>
 
       <!-- 切人 -->
@@ -92,7 +89,7 @@ function flip(id: string, current: LikeKind) {
           :key="who.key"
           type="button"
           class="flex-1 rounded-lg py-1.5 transition"
-          :class="viewing === who.key ? 'bg-sky-500 text-white' : 'text-slate-400 hover:text-slate-200'"
+          :class="viewing === who.key ? 'surface-button text-white' : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'"
           @click="viewing = who.key"
         >
           {{ who.name }}

@@ -26,12 +26,10 @@ function confirmRemove(id: string, name: string) {
   <div>
     <NavBar />
     <div class="mx-auto w-full max-w-2xl p-4 sm:p-6">
-      <div class="night-card overflow-hidden p-6">
+      <div class="night-card overflow-hidden p-5 sm:p-6">
         <!-- 标题 + 进度环 -->
         <div class="flex items-center justify-between">
-          <h1 class="bg-gradient-to-r from-sky-300 via-cyan-300 to-sky-400 bg-clip-text text-2xl font-semibold tracking-wide text-transparent">
-            !TARGET!
-          </h1>
+          <h1 class="page-title">!TARGET!</h1>
           <div v-if="total" class="relative h-12 w-12 shrink-0">
             <svg viewBox="0 0 36 36" class="h-12 w-12 -rotate-90">
               <circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="3" />
@@ -60,11 +58,11 @@ function confirmRemove(id: string, name: string) {
             type="text"
             maxlength="100"
             placeholder="想一起做的事…"
-            class="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-slate-100 outline-none transition focus:border-sky-400"
+            class="surface-input min-w-0 flex-1 rounded-xl px-4 py-2.5 text-sm outline-none"
           />
           <button
             type="submit"
-            class="shrink-0 rounded-xl bg-gradient-to-r from-sky-500 to-cyan-500 px-4 py-2.5 text-sm font-medium text-white transition hover:brightness-110 active:scale-95"
+            class="surface-button shrink-0 rounded-xl px-4 py-2.5 text-sm font-medium"
           >
             添加
           </button>

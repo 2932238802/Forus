@@ -63,10 +63,10 @@ function confirmRemove(id: string, name: string) {
   <div>
     <NavBar />
     <div class="mx-auto w-full max-w-[900px] p-4 sm:p-6">
-      <div class="mb-5 px-1 text-center">
-        <h1 class="bg-gradient-to-r from-rose-300 via-pink-300 to-rose-400 bg-clip-text text-2xl font-semibold tracking-wide text-transparent">
-          Adore!!
-        </h1>
+      <div class="mb-5 flex items-center justify-center gap-2 px-1 text-center">
+        <span class="h-px w-10 bg-gradient-to-r from-transparent to-rose-400/50" />
+        <h1 class="bg-gradient-to-r from-rose-200 via-pink-300 to-rose-400 bg-clip-text text-2xl font-semibold tracking-[0.08em] text-transparent">Adore!!</h1>
+        <span class="h-px w-10 bg-gradient-to-l from-transparent to-rose-400/50" />
       </div>
 
       <!-- 切人 -->
@@ -76,7 +76,7 @@ function confirmRemove(id: string, name: string) {
           :key="who.key"
           type="button"
           class="flex-1 rounded-lg py-1.5 transition"
-          :class="viewing === who.key ? 'bg-rose-500 text-white' : 'text-slate-400 hover:text-slate-200'"
+          :class="viewing === who.key ? 'bg-gradient-to-r from-rose-400 to-pink-500 text-white shadow-lg shadow-rose-500/20' : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'"
           @click="viewing = who.key"
         >
           {{ who.name }}
@@ -91,7 +91,7 @@ function confirmRemove(id: string, name: string) {
           type="text"
           maxlength="2000"
           placeholder="TA 的一个优点 / 让你心动的地方…"
-          class="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-slate-100 outline-none transition focus:border-rose-400"
+          class="surface-input min-w-0 flex-1 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-rose-400 focus:shadow-[0_0_0_3px_rgba(251,113,133,0.12)]"
         />
         <button
           type="submit"

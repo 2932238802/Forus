@@ -141,8 +141,8 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
         <!-- 左：月历 -->
         <div class="night-card p-6">
           <div class="flex items-center justify-between">
-            <h1 class="text-lg font-medium tracking-wide text-slate-100">Calendar</h1>
-            <button class="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300 transition hover:bg-white/10" @click="goToday">今天</button>
+            <h1 class="page-title">Calendar</h1>
+            <button class="surface-input rounded-full px-3 py-1 text-xs text-slate-200" @click="goToday">今天</button>
           </div>
 
           <div class="mt-4 flex items-center justify-between">

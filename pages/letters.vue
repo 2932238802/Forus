@@ -107,13 +107,10 @@ function fmtDate(s: string) {
       <div class="night-card p-6">
         <div class="flex items-start justify-between">
           <div>
-            <h1 class="text-lg font-medium tracking-wide text-slate-100">给未来的信</h1>
-            <p class="mt-1 text-xs text-slate-500">
-              写给 {{ nameOf(ta) || 'TA' }}，到了那天才能拆开 💌
-            </p>
+            <h1 class="page-title">给未来的信</h1>
           </div>
           <button
-            class="shrink-0 rounded-full bg-sky-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-sky-400 active:scale-95"
+            class="surface-button shrink-0 rounded-full px-4 py-2 text-sm font-medium"
             @click="openEditor"
           >
             写一封

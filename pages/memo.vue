@@ -84,11 +84,11 @@ function fmt(at: number) {
   <div>
     <NavBar />
     <div class="mx-auto w-full max-w-2xl p-4 sm:p-6">
-      <div class="night-card p-6">
-        <h1 class="text-lg font-medium tracking-wide text-slate-100">备忘录</h1>
-        <p class="mt-1 text-xs text-slate-500">
-          {{ isOwnView ? '随手记下要做的事' : `看看 ${nameOf(viewing)} 写了什么，留个言吧` }}
-        </p>
+      <div class="night-card overflow-hidden p-5 sm:p-6">
+        <div class="flex items-center justify-between">
+          <h1 class="page-title">备忘录</h1>
+          <span class="text-lg">✦</span>
+        </div>
 
         <!-- 切换看谁的 -->
         <div class="mt-4 flex gap-1.5 rounded-xl bg-white/5 p-1 text-sm">
@@ -97,7 +97,7 @@ function fmt(at: number) {
             :key="who.key"
             type="button"
             class="flex-1 rounded-lg py-1.5 transition"
-            :class="viewing === who.key ? 'bg-sky-500 text-white' : 'text-slate-400 hover:text-slate-200'"
+            :class="viewing === who.key ? 'surface-button text-white' : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'"
             @click="viewing = who.key"
           >
             {{ who.name }}的
@@ -112,11 +112,11 @@ function fmt(at: number) {
             type="text"
             maxlength="200"
             placeholder="记一条…"
-            class="min-w-0 flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-100 outline-none focus:border-sky-400"
+            class="surface-input min-w-0 flex-1 rounded-xl px-3 py-2 text-sm outline-none"
           />
           <button
             type="submit"
-            class="shrink-0 rounded-lg bg-sky-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-sky-400 active:scale-95"
+            class="surface-button shrink-0 rounded-xl px-4 py-2 text-sm font-medium"
           >
             添加
           </button>

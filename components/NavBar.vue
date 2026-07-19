@@ -28,14 +28,15 @@ async function onLock() {
     <!-- 展开的菜单（向上弹出） -->
     <transition-group
       name="pop"
-      tag="div"
+      tag="nav"
+      aria-label="站点导航"
       class="mb-3 flex flex-col gap-2"
     >
       <NuxtLink
         v-for="(l, i) in (open ? links : [])"
         :key="l.to"
         :to="l.to"
-        class="flex items-center gap-2.5 rounded-full border border-white/10 bg-black/50 px-4 py-2 text-sm text-slate-200 backdrop-blur-md transition hover:bg-white/10"
+        class="flex items-center gap-2.5 rounded-full border border-white/10 bg-slate-950/65 px-4 py-2 text-sm text-slate-200 shadow-lg shadow-black/20 backdrop-blur-xl transition hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/10"
         active-class="accent-text"
         :style="{ transitionDelay: `${i * 40}ms` }"
         @click="open = false"
@@ -48,7 +49,7 @@ async function onLock() {
         v-for="x in (open ? [1] : [])"
         :key="'lock'"
         type="button"
-        class="flex items-center gap-2.5 rounded-full border border-white/10 bg-black/50 px-4 py-2 text-sm text-slate-400 backdrop-blur-md transition hover:bg-rose-500/20 hover:text-rose-300"
+        class="flex items-center gap-2.5 rounded-full border border-white/10 bg-slate-950/65 px-4 py-2 text-sm text-slate-400 shadow-lg shadow-black/20 backdrop-blur-xl transition hover:-translate-y-0.5 hover:border-rose-400/30 hover:bg-rose-500/20 hover:text-rose-300"
         :style="{ transitionDelay: `${links.length * 40}ms` }"
         @click="onLock"
       >
@@ -58,7 +59,7 @@ async function onLock() {
 
     <!-- 浮动主按钮（可拖动） -->
     <button
-      class="flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-black/50 text-2xl backdrop-blur-md transition hover:scale-105 active:scale-95"
+      class="flex h-12 w-12 items-center justify-center rounded-full border border-white/15 bg-slate-950/70 text-2xl shadow-xl shadow-black/25 backdrop-blur-xl transition hover:scale-105 hover:border-white/30 hover:bg-white/10 active:scale-95"
       :title="open ? '收起' : '去别处看看'"
       @click="open = !open"
     >
