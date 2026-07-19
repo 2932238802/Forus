@@ -123,7 +123,8 @@ export function todayCelebration(now: Date = new Date()): Celebration | null {
   // lunar-javascript 会按当年的公历日期转换农历，因此闰月不会误触发普通六月生日。
   const lunar = Solar.fromDate(now).getLunar()
   const { month: npyBirthdayMonth, day: npyBirthdayDay } = siteConfig.birthdayNpyLunar
-  if (!lunar.isLeap() && lunar.getMonth() === npyBirthdayMonth && lunar.getDay() === npyBirthdayDay) {
+  // 闰月的 getMonth() 会返回负数；因此只匹配正数 6 即可排除闰六月。
+  if (lunar.getMonth() === npyBirthdayMonth && lunar.getDay() === npyBirthdayDay) {
     return {
       kind: 'birthday-npy',
       title: `${siteConfig.npy} 生日快乐`,
