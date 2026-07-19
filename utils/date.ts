@@ -1,4 +1,5 @@
 // 日期相关工具
+import { Solar } from 'lunar-javascript'
 import { siteConfig } from '~/data/site'
 
 /** 计算两个日期之间的天数（含今天） */
@@ -118,12 +119,15 @@ export function todayCelebration(now: Date = new Date()): Celebration | null {
     }
   }
 
-  // 2) 生日
-  if (mmdd === siteConfig.birthdayNpy) {
+  // 2) 生日：在野只按农历六月初六判断，不再使用固定公历日期。
+  // lunar-javascript 会按当年的公历日期转换农历，因此闰月不会误触发普通六月生日。
+  const lunar = Solar.fromDate(now).getLunar()
+  const { month: npyBirthdayMonth, day: npyBirthdayDay } = siteConfig.birthdayNpyLunar
+  if (!lunar.isLeap() && lunar.getMonth() === npyBirthdayMonth && lunar.getDay() === npyBirthdayDay) {
     return {
       kind: 'birthday-npy',
       title: `${siteConfig.npy} 生日快乐`,
-      subtitle: '今天是属于你的日子 🎂',
+      subtitle: '农历六月初六，今天是属于你的日子 🎂',
       emoji: '🎂',
       todayKey: `cele-${todayKey}-bd-npy`,
     }
