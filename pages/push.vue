@@ -53,7 +53,17 @@ function confirmRemove(id: string, text: string) {
 
 function fmt(at: number) {
   const d = new Date(at)
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+  const now = Date.now()
+  const diff = now - at
+  const mins = Math.floor(diff / 60000)
+  const hours = Math.floor(diff / 3600000)
+  const days = Math.floor(diff / 86400000)
+  if (mins < 1) return '刚刚'
+  if (mins < 60) return `${mins} 分钟前`
+  if (hours < 24) return `${hours} 小时前`
+  if (days === 1) return '昨天'
+  if (days < 7) return `${days} 天前`
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 </script>
 
@@ -124,15 +134,16 @@ function fmt(at: number) {
             </template>
 
             <template v-else>
+              <div class="mb-2 flex items-center justify-between">
+                <span class="text-xs tabular-nums text-rose-400/70">{{ fmt(p.at) }}</span>
+              </div>
               <p class="break-words text-sm leading-relaxed text-slate-100">
                 <span class="mr-1.5 text-rose-400/60">「</span>{{ p.text }}<span class="ml-1.5 text-rose-400/60">」</span>
               </p>
               <p v-if="p.note" class="mt-1.5 break-words text-xs leading-relaxed text-slate-500">
                 {{ p.note }}
               </p>
-              <div class="mt-2 flex items-center justify-between">
-                <span class="text-[10px] tabular-nums text-slate-600">{{ fmt(p.at) }}</span>
-                <div class="flex gap-3 text-slate-600 opacity-0 transition group-hover:opacity-100">
+              <div class="mt-2 flex justify-end gap-3 text-slate-600 opacity-0 transition group-hover:opacity-100">
                   <button class="transition hover:text-rose-300" title="编辑" @click="startEdit(p)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z" stroke-linecap="round" stroke-linejoin="round" /></svg>
                   </button>
@@ -140,8 +151,7 @@ function fmt(at: number) {
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round" /></svg>
                   </button>
                 </div>
-              </div>
-            </template>
+              </template>
           </div>
         </div>
 
