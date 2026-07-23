@@ -10,13 +10,14 @@ const { identityKey, load: loadIdentity } = useIdentity()
 
 onMounted(() => loadIdentity())
 
+const canEdit = computed(() => identityKey.value === 'you')
 const total = computed(() => pushbacks.value.length)
 
 const textInput = ref('')
 const noteInput = ref('')
 
 async function submit() {
-  if (!textInput.value.trim() || !identityKey.value) return
+  if (!textInput.value.trim() || !identityKey.value || !canEdit.value) return
   await addPushback(identityKey.value, textInput.value, noteInput.value)
   textInput.value = ''
   noteInput.value = ''
@@ -27,6 +28,7 @@ const editText = ref('')
 const editNote = ref('')
 
 function startEdit(p: { id: string; text: string; note: string }) {
+  if (!canEdit.value) return
   editingId.value = p.id
   editText.value = p.text
   editNote.value = p.note
@@ -76,13 +78,14 @@ function fmt(at: number) {
           <div>
             <h1 class="page-title">又推又推</h1>
             <p class="mt-1 text-xs text-slate-500">她说反话推开你的时候，记在这里</p>
+            <p v-if="!canEdit" class="mt-0.5 text-[11px] text-slate-600">只能 LosAngelous 记录</p>
           </div>
           <div v-if="total" class="flex items-center gap-1 text-xs text-slate-500">
             <span class="rounded-full bg-white/10 px-2.5 py-1 tabular-nums">{{ total }}</span>
           </div>
         </div>
 
-        <form class="mt-5 flex flex-col gap-2" @submit.prevent="submit">
+        <form v-if="canEdit" class="mt-5 flex flex-col gap-2" @submit.prevent="submit">
           <input
             v-model="textInput"
             type="text"
@@ -143,7 +146,7 @@ function fmt(at: number) {
               <p v-if="p.note" class="mt-1.5 break-words text-xs leading-relaxed text-slate-500">
                 {{ p.note }}
               </p>
-              <div class="mt-2 flex justify-end gap-3 text-slate-600 opacity-0 transition group-hover:opacity-100">
+              <div v-if="canEdit" class="mt-2 flex justify-end gap-3 text-slate-600 opacity-0 transition group-hover:opacity-100">
                   <button class="transition hover:text-rose-300" title="编辑" @click="startEdit(p)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z" stroke-linecap="round" stroke-linejoin="round" /></svg>
                   </button>
