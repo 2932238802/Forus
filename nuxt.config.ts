@@ -4,17 +4,17 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   telemetry: false,
 
-  // 服务端私有配置（绝不会打包进前端）
+  // Server-only configuration.
   runtimeConfig: {
-    // 共用暗号：从环境变量读取，默认回退到 622（生产请在 .env 配置 NUXT_PASSPHRASE）
     passphrase: process.env.NUXT_PASSPHRASE || '622',
-    // Cookie 签名密钥：从环境变量读取（生产务必在 .env 配置 NUXT_AUTH_SECRET）
     authSecret: process.env.NUXT_AUTH_SECRET || 'forus-dev-secret-change-me',
-    // DeepSeek API Key（小猫 AI）
-    deepseekKey: process.env.NUXT_DEEPSEEK_KEY || '',
+    // OpenAI-compatible API configuration for Cat Chat.
+    catApiBase: process.env.NUXT_CAT_API_BASE || 'https://wawapii.com/v1',
+    catApiKey: process.env.NUXT_CAT_API_KEY || '',
+    catModel: process.env.NUXT_CAT_MODEL || 'deepseek-chat',
   },
 
-  // 关闭 appManifest，消除 dev 下 "#app-manifest" 预转换报错
+  // Disable appManifest to avoid the dev pre-transform error.
   experimental: {
     appManifest: false,
   },
@@ -26,8 +26,10 @@ export default defineNuxtConfig({
   ],
 
   supabase: {
-    // 不使用 Supabase Auth 登录跳转，改用前端共用暗号；关闭自动重定向
+    // The app uses the shared passphrase instead of Supabase Auth redirects.
     redirect: false,
+    // Database types have not been generated yet.
+    types: false,
   },
 
   css: ['~/assets/css/main.css'],

@@ -9,6 +9,7 @@ const links = [
   { to: '/likes', label: 'Like And Unlike' },
   { to: '/adore', label: 'Adore!!' },
   { to: '/push', label: '又推又推' },
+  { to: '/dislikes', label: '需要改进的地方' },
   { to: '/letters', label: '给未来的信' },
   { to: '/calendar', label: 'Calendar' },
 ]

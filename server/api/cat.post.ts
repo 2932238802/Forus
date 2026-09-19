@@ -22,9 +22,9 @@ export default defineEventHandler(async (event) => {
     return { ok: false, error: '未解锁' }
   }
 
-  if (!config.deepseekKey) {
+  if (!config.catApiKey) {
     setResponseStatus(event, 500)
-    return { ok: false, error: '小猫还没配置好（缺 DeepSeek key）' }
+    return { ok: false, error: '小猫还没配置好（缺 API key）' }
   }
 
   const body = await readBody<{ message?: string; history?: ChatMsg[] }>(event)
@@ -88,14 +88,14 @@ export default defineEventHandler(async (event) => {
 
   // 4) 调 DeepSeek
   try {
-    const res = await $fetch<any>('https://api.deepseek.com/chat/completions', {
+    const res = await $fetch<any>(`${String(config.catApiBase).replace(/\/$/, '')}/chat/completions`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${config.deepseekKey}`,
+        Authorization: `Bearer ${config.catApiKey}`,
         'Content-Type': 'application/json',
       },
       body: {
-        model: 'deepseek-chat',
+        model: config.catModel,
         messages: [
           { role: 'system', content: systemPrompt },
           ...history,
