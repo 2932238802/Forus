@@ -1,4 +1,4 @@
-import { useSupabaseClient } from '#imports'
+import { useDb } from '~/composables/useDb'
 import type { IdentityKey } from '~/composables/useIdentity'
 
 export interface Poke {
@@ -11,7 +11,7 @@ export interface Poke {
 }
 
 export function usePokes() {
-  const supabase = useSupabaseClient()
+  const supabase = useDb()
 
   function mapRow(r: any): Poke {
     return {

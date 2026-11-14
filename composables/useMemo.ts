@@ -1,5 +1,5 @@
 import { ref, onMounted, onUnmounted } from 'vue'
-import { useSupabaseClient } from '#imports'
+import { useDb } from '~/composables/useDb'
 import type { IdentityKey } from '~/composables/useIdentity'
 
 export interface Memo {
@@ -11,7 +11,7 @@ export interface Memo {
 }
 
 export function useMemo() {
-  const supabase = useSupabaseClient()
+  const supabase = useDb()
   const memos = ref<Memo[]>([])
 
   function mapRow(r: any): Memo {
@@ -35,21 +35,30 @@ export function useMemo() {
   /** 新增一条备忘录到指定人名下 */
   async function addMemo(owner: IdentityKey, text: string) {
     if (!text.trim()) return
-    await supabase.from('memos').insert({ owner, text: text.trim(), done: false })
+    const { error } = await supabase
+      .from('memos')
+      .insert({ owner, text: text.trim(), done: false })
+    if (error) throw error
   }
 
   async function toggleMemo(id: string, done: boolean) {
-    await supabase.from('memos').update({ done }).eq('id', id)
+    const { error } = await supabase.from('memos').update({ done }).eq('id', id)
+    if (error) throw error
   }
 
   /** 修改备忘录文字内容 */
   async function updateMemoText(id: string, text: string) {
     if (!text.trim()) return
-    await supabase.from('memos').update({ text: text.trim() }).eq('id', id)
+    const { error } = await supabase
+      .from('memos')
+      .update({ text: text.trim() })
+      .eq('id', id)
+    if (error) throw error
   }
 
   async function removeMemo(id: string) {
-    await supabase.from('memos').delete().eq('id', id)
+    const { error } = await supabase.from('memos').delete().eq('id', id)
+    if (error) throw error
   }
 
   let channel: any = null

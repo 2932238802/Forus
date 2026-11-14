@@ -2,34 +2,36 @@
 import { Solar } from 'lunar-javascript'
 import { siteConfig } from '~/data/site'
 
-/** 计算两个日期之间的天数（含今天） */
-export function daysSince(dateStr: string): number {
+/** 计算两个日期之间的天数（含今天；起始日返回 1） */
+export function daysSince(dateStr: string, now: Date = new Date()): number {
   const start = new Date(dateStr + 'T00:00:00')
-  const now = new Date()
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const diff = today.getTime() - start.getTime()
   return Math.max(0, Math.floor(diff / 86400000) + 1)
 }
 
 /** 距离某个未来日期还有多少天 */
-export function daysUntil(dateStr: string): number {
+export function daysUntil(dateStr: string, now: Date = new Date()): number {
   const target = new Date(dateStr + 'T00:00:00')
-  const now = new Date()
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const diff = target.getTime() - today.getTime()
   return Math.ceil(diff / 86400000)
 }
 
-/** 在一起的天数 */
-export function togetherDays(): number {
-  return daysSince(siteConfig.startDate)
+/** 在一起的天数（含今天） */
+export function togetherDays(now: Date = new Date()): number {
+  return daysSince(siteConfig.startDate, now)
 }
 
 /**
  * 在一起的精确时长（实时跳动用）。
  * 从起始日 00:00:00 算到此刻，拆成 天/时/分/秒。
+ * days 含今天：起始日当天为第 1 天，与 daysSince 口径一致。
  */
-export function togetherDuration(startStr: string = siteConfig.startDate): {
+export function togetherDuration(
+  startStr: string = siteConfig.startDate,
+  now: Date = new Date(),
+): {
   days: number
   hours: number
   minutes: number
@@ -37,11 +39,10 @@ export function togetherDuration(startStr: string = siteConfig.startDate): {
   totalSeconds: number
 } {
   const start = new Date(startStr + 'T00:00:00').getTime()
-  const now = Date.now()
-  let diff = Math.max(0, Math.floor((now - start) / 1000)) // 总秒数
+  let diff = Math.max(0, Math.floor((now.getTime() - start) / 1000)) // 总秒数
   const totalSeconds = diff
-  const days = Math.floor(diff / 86400)
-  diff -= days * 86400
+  const days = Math.floor(diff / 86400) + 1
+  diff -= (days - 1) * 86400
   const hours = Math.floor(diff / 3600)
   diff -= hours * 3600
   const minutes = Math.floor(diff / 60)
@@ -59,14 +60,16 @@ export function formatDate(dateStr: string): string {
  * 返回该周年的日期字符串、距今天数、以及这是第几周年。
  * 例：起始 2026-06-22，今天 2027-07-01 → 下一个是 2028-06-22（两周年）。
  */
-export function nextAnniversary(startStr: string = siteConfig.startDate): {
+export function nextAnniversary(
+  startStr: string = siteConfig.startDate,
+  now: Date = new Date(),
+): {
   date: string
   daysLeft: number
   yearsCount: number
   label: string
 } {
   const start = new Date(startStr + 'T00:00:00')
-  const now = new Date()
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
 
   // 从今年开始找第一个 >= 今天的周年
@@ -144,7 +147,7 @@ export function todayCelebration(now: Date = new Date()): Celebration | null {
   }
 
   // 3) 整百天（在一起天数是 100 的倍数）
-  const days = daysSince(siteConfig.startDate)
+  const days = daysSince(siteConfig.startDate, now)
   if (days > 0 && days % 100 === 0) {
     return {
       kind: 'hundred',

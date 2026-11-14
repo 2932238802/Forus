@@ -1,5 +1,6 @@
 import { ref, onMounted, onUnmounted } from 'vue'
-import { useSupabaseClient } from '#imports'
+import { useDb } from '~/composables/useDb'
+import { useMediaUpload } from '~/composables/useMediaUpload'
 
 export interface Note {
   id: string
@@ -11,7 +12,8 @@ export interface Note {
 }
 
 export function useNotes() {
-  const supabase = useSupabaseClient()
+  const supabase = useDb()
+  const { removeUrl } = useMediaUpload()
   const notes = ref<Note[]>([])
 
   function mapRow(row: any): Note {
@@ -35,20 +37,34 @@ export function useNotes() {
 
   async function addText(author: string, text: string) {
     if (!text.trim()) return
-    await supabase.from('notes').insert({ author, kind: 'text', text: text.trim() })
+    const { error } = await supabase
+      .from('notes')
+      .insert({ author, kind: 'text', text: text.trim() })
+    if (error) throw error
   }
 
   async function addImage(author: string, imageUrl: string, caption = '') {
-    await supabase.from('notes').insert({
+    const { error } = await supabase.from('notes').insert({
       author,
       kind: 'image',
       image_url: imageUrl,
       text: caption,
     })
+    if (error) throw error
   }
 
   async function removeNote(id: string) {
-    await supabase.from('notes').delete().eq('id', id)
+    const target = notes.value.find((n) => n.id === id)
+    const { error } = await supabase.from('notes').delete().eq('id', id)
+    if (error) throw error
+    // 图片消息同时清理 Storage，避免文件永久残留
+    if (target?.kind === 'image' && target.imageUrl) {
+      try {
+        await removeUrl(target.imageUrl)
+      } catch (err) {
+        console.warn('[useNotes] 清理图片失败：', err)
+      }
+    }
   }
 
   let channel: any = null

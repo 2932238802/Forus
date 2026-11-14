@@ -14,6 +14,7 @@ export const THEMES: Theme[] = [
 
 const STORAGE_KEY = 'forus_theme'
 const current = ref<string>('star')
+let initialized = false
 
 export function useTheme() {
   function apply(id: string) {
@@ -29,6 +30,9 @@ export function useTheme() {
   }
 
   onMounted(() => {
+    // 多个组件都会调用 useTheme()，只初始化一次
+    if (initialized) return
+    initialized = true
     let saved = 'star'
     try {
       saved = localStorage.getItem(STORAGE_KEY) || 'star'

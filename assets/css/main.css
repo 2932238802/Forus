@@ -37,6 +37,13 @@ html {
   --accent: #38bdf8;
   --accent-2: #7dd3fc;
   --accent-rgb: 56, 189, 248;
+  --accent-2-rgb: 125, 211, 252;
+  --positive: #34d399;
+  --positive-rgb: 52, 211, 153;
+  --negative: #fb7185;
+  --negative-rgb: 251, 113, 133;
+  --warning: #fbbf24;
+  --warning-rgb: 251, 191, 36;
 }
 
 /* 主题二：樱花飘落（暖粉夜樱） */
@@ -49,6 +56,13 @@ html {
   --accent: #fb7faf;
   --accent-2: #fdb8d2;
   --accent-rgb: 251, 127, 175;
+  --accent-2-rgb: 253, 184, 210;
+  --positive: #4ade80;
+  --positive-rgb: 74, 222, 128;
+  --negative: #f472b6;
+  --negative-rgb: 244, 114, 182;
+  --warning: #fbbf24;
+  --warning-rgb: 251, 191, 36;
 }
 
 body {
@@ -141,64 +155,6 @@ body {
 ::-webkit-scrollbar-thumb {
   background: rgba(148, 163, 184, 0.3);
   border-radius: 999px;
-}
-
-/* ============ 窗帘 + 阳光 进入动画 ============ */
-.curtain-soft {
-  background-image:
-    repeating-linear-gradient(
-      90deg,
-      rgba(255, 255, 255, 0.5) 0px,
-      rgba(255, 255, 255, 0.5) 1px,
-      rgba(148, 163, 184, 0.06) 40px,
-      rgba(148, 163, 184, 0.1) 80px,
-      rgba(255, 255, 255, 0.5) 120px
-    ),
-    linear-gradient(180deg, #f0f6ff 0%, #dbeafe 45%, #cfe2f8 100%);
-  background-blend-mode: soft-light;
-}
-
-@keyframes sunrise {
-  0% { opacity: 0; transform: translate(20%, -20%) scale(0.8); }
-  100% { opacity: 1; transform: translate(0, 0) scale(1); }
-}
-.sunbeam {
-  background: radial-gradient(
-    circle at 100% 0%,
-    rgba(255, 251, 235, 0.95) 0%,
-    rgba(254, 243, 199, 0.55) 12%,
-    rgba(186, 230, 253, 0.25) 30%,
-    transparent 60%
-  );
-  animation: sunrise 2.2s ease-out forwards;
-}
-
-@keyframes rayShine {
-  0% { opacity: 0; }
-  60% { opacity: 0.9; }
-  100% { opacity: 0.5; }
-}
-.sun-rays {
-  background: conic-gradient(
-    from 200deg at 100% 0%,
-    transparent 0deg,
-    rgba(255, 250, 230, 0.55) 8deg,
-    transparent 16deg,
-    rgba(255, 250, 230, 0.35) 24deg,
-    transparent 34deg,
-    rgba(255, 250, 230, 0.45) 44deg,
-    transparent 54deg
-  );
-  animation: rayShine 2.6s ease-out forwards;
-  mix-blend-mode: screen;
-}
-
-@keyframes floatDust {
-  0%, 100% { transform: translateY(0) translateX(0); opacity: 0.6; }
-  50% { transform: translateY(-30px) translateX(12px); opacity: 1; }
-}
-.dust {
-  animation: floatDust 7s ease-in-out infinite;
 }
 
 /* ============ 想你了：心跳一下 ============ */

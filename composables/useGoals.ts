@@ -1,5 +1,5 @@
 import { ref, onMounted, onUnmounted } from 'vue'
-import { useSupabaseClient } from '#imports'
+import { useDb } from '~/composables/useDb'
 
 export interface Goal {
   id: string
@@ -9,7 +9,7 @@ export interface Goal {
 }
 
 export function useGoals() {
-  const supabase = useSupabaseClient()
+  const supabase = useDb()
   const goals = ref<Goal[]>([])
 
   function mapRow(r: any): Goal {
@@ -26,15 +26,20 @@ export function useGoals() {
 
   async function addGoal(title: string) {
     if (!title.trim()) return
-    await supabase.from('goals').insert({ title: title.trim(), done: false })
+    const { error } = await supabase
+      .from('goals')
+      .insert({ title: title.trim(), done: false })
+    if (error) throw error
   }
 
   async function toggleGoal(id: string, done: boolean) {
-    await supabase.from('goals').update({ done }).eq('id', id)
+    const { error } = await supabase.from('goals').update({ done }).eq('id', id)
+    if (error) throw error
   }
 
   async function removeGoal(id: string) {
-    await supabase.from('goals').delete().eq('id', id)
+    const { error } = await supabase.from('goals').delete().eq('id', id)
+    if (error) throw error
   }
 
   let channel: any = null

@@ -1,5 +1,5 @@
 import { ref, onMounted, onUnmounted } from 'vue'
-import { useSupabaseClient } from '#imports'
+import { useDb } from '~/composables/useDb'
 
 export interface CalMark {
   id: string
@@ -9,7 +9,7 @@ export interface CalMark {
 }
 
 export function useCalendar() {
-  const supabase = useSupabaseClient()
+  const supabase = useDb()
   const marks = ref<CalMark[]>([])
 
   function mapRow(r: any): CalMark {
@@ -35,7 +35,13 @@ export function useCalendar() {
     const existing = byDate(date)
     if (!t) {
       // 清空 = 删除
-      if (existing) await supabase.from('calendar_marks').delete().eq('id', existing.id)
+      if (existing) {
+        const { error } = await supabase
+          .from('calendar_marks')
+          .delete()
+          .eq('id', existing.id)
+        if (error) throw error
+      }
       return
     }
     if (existing) {

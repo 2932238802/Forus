@@ -63,7 +63,7 @@ watch(
         @click.self="close"
       >
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-        <div class="relative w-full max-w-sm rounded-3xl border border-rose-400/30 bg-slate-900/95 p-7 text-center shadow-2xl">
+        <div class="relative w-full max-w-sm rounded-3xl border border-negative/30 bg-slate-900/95 p-7 text-center shadow-2xl">
           <div class="text-5xl">💗</div>
           <p class="mt-4 text-base font-medium text-slate-100">
             <template v-if="pokes.length === 1">
@@ -73,7 +73,7 @@ watch(
               {{ nameOf(pokes[0].whoFrom) }} 想你了 {{ pokes.length }} 次
             </template>
           </p>
-          <p class="mt-1.5 text-xs tracking-wide text-rose-200/70">
+          <p class="mt-1.5 text-xs tracking-wide text-negative/70">
             {{ pokes.length === 1 ? fmt(pokes[0].at) : `最近一次 ${fmt(pokes[pokes.length - 1].at)}` }}
           </p>
 
@@ -82,7 +82,7 @@ watch(
           </p>
 
           <button
-            class="mt-6 w-full rounded-2xl bg-rose-500/90 py-3 text-sm font-medium text-white transition hover:bg-rose-400 active:scale-95"
+            class="mt-6 w-full rounded-2xl bg-negative/90 py-3 text-sm font-medium text-white transition hover:brightness-110 active:scale-95"
             @click="close"
           >
             我也想你 💕

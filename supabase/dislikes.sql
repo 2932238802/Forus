@@ -20,4 +20,9 @@ alter table public.dislikes enable row level security;
 drop policy if exists "anon all dislikes" on public.dislikes;
 create policy "anon all dislikes" on public.dislikes for all to anon using (true) with check (true);
 
-alter publication supabase_realtime add table public.dislikes;
+-- 实时同步（可重复执行）
+do $$
+begin
+  alter publication supabase_realtime add table public.dislikes;
+exception when duplicate_object then null;
+end $$;

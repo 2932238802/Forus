@@ -1,4 +1,5 @@
 import { createHmac } from 'node:crypto'
+import { safeEqual } from './safe-compare'
 
 /**
  * 生成一个带签名的解锁令牌。
@@ -26,8 +27,8 @@ export function verifyToken(
   if (parts.length !== 2) return false
   const [payload, sig] = parts
   const expected = createHmac('sha256', secret).update(payload).digest('base64url')
-  // 签名比对（长度不同直接失败，避免抛错）
-  if (sig.length !== expected.length || sig !== expected) return false
+  // 恒定时间比较
+  if (!safeEqual(sig, expected)) return false
   // 校验时效
   try {
     const ts = Number(Buffer.from(payload, 'base64url').toString())

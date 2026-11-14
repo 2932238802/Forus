@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useMediaQuery } from '@vueuse/core'
 import { usePassphrase } from '~/composables/usePassphrase'
 import { todayCelebration, type Celebration } from '~/utils/date'
@@ -64,8 +64,8 @@ function onOpened() {
     <!-- 封面：仅未解锁时显示 -->
     <CurtainIntro v-if="mounted && showCurtain" @opened="onOpened" />
 
-    <!-- 主页内容 -->
-    <div class="transition-all duration-1000" :class="entered ? 'opacity-100 blur-0' : 'opacity-0 blur-sm'">
+    <!-- 主页内容：解锁后才挂载，避免未解锁时拉取数据 / 建立 Realtime -->
+    <div v-if="entered" class="transition-all duration-1000">
       <NavBar />
 
       <!-- 想你了：进入后检测对方在你不在时的「想你」 -->
@@ -73,7 +73,7 @@ function onOpened() {
         <PokeAlert :active="entered" />
       </ClientOnly>
 
-      <!-- 专属小猫（仅在野可见） -->
+      <!-- 专属小猫 -->
       <CatChat />
 
       <!-- 纪念日彩蛋：特殊日子自动撒花 -->

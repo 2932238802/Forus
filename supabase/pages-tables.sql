@@ -32,11 +32,29 @@ alter table public.memos enable row level security;
 alter table public.goals enable row level security;
 alter table public.likes enable row level security;
 
+drop policy if exists "anon all memos" on public.memos;
+drop policy if exists "anon all goals" on public.goals;
+drop policy if exists "anon all likes" on public.likes;
+
 create policy "anon all memos" on public.memos for all to anon using (true) with check (true);
 create policy "anon all goals" on public.goals for all to anon using (true) with check (true);
 create policy "anon all likes" on public.likes for all to anon using (true) with check (true);
 
--- 实时同步
-alter publication supabase_realtime add table public.memos;
-alter publication supabase_realtime add table public.goals;
-alter publication supabase_realtime add table public.likes;
+-- 实时同步（可重复执行）
+do $$
+begin
+  alter publication supabase_realtime add table public.memos;
+exception when duplicate_object then null;
+end $$;
+
+do $$
+begin
+  alter publication supabase_realtime add table public.goals;
+exception when duplicate_object then null;
+end $$;
+
+do $$
+begin
+  alter publication supabase_realtime add table public.likes;
+exception when duplicate_object then null;
+end $$;

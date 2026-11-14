@@ -11,4 +11,9 @@ alter table public.pushbacks enable row level security;
 drop policy if exists "anon all pushbacks" on public.pushbacks;
 create policy "anon all pushbacks" on public.pushbacks for all to anon using (true) with check (true);
 
-alter publication supabase_realtime add table public.pushbacks;
+-- 实时同步（可重复执行）
+do $$
+begin
+  alter publication supabase_realtime add table public.pushbacks;
+exception when duplicate_object then null;
+end $$;

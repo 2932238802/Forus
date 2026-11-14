@@ -14,11 +14,10 @@ create table if not exists public.cat_messages (
 create index if not exists cat_messages_time_idx
   on public.cat_messages (created_at asc);
 
--- RLS：允许匿名读写（与其他表一致）
+-- RLS：小猫对话只通过服务端 /api/cat 与 /api/cat-messages 使用 service_role 读写
 alter table public.cat_messages enable row level security;
 
 drop policy if exists "anon all cat_messages" on public.cat_messages;
-create policy "anon all cat_messages" on public.cat_messages for all to anon using (true) with check (true);
+revoke select, insert, update, delete on public.cat_messages from anon;
 
--- 实时同步（新表，直接添加）
-alter publication supabase_realtime add table public.cat_messages;
+-- 对话由服务端持久化，不加入 Realtime publication。

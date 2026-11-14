@@ -1,5 +1,5 @@
 import { ref, onMounted, onUnmounted } from 'vue'
-import { useSupabaseClient } from '#imports'
+import { useDb } from '~/composables/useDb'
 import type { IdentityKey } from '~/composables/useIdentity'
 
 export interface MemoComment {
@@ -11,7 +11,7 @@ export interface MemoComment {
 }
 
 export function useMemoComments() {
-  const supabase = useSupabaseClient()
+  const supabase = useDb()
   // 所有评论（前端按 memoId 分组）
   const comments = ref<MemoComment[]>([])
 
@@ -47,7 +47,8 @@ export function useMemoComments() {
   }
 
   async function removeComment(id: string) {
-    await supabase.from('memo_comments').delete().eq('id', id)
+    const { error } = await supabase.from('memo_comments').delete().eq('id', id)
+    if (error) throw error
   }
 
   let channel: any = null

@@ -21,5 +21,9 @@ alter table public.adores enable row level security;
 drop policy if exists "anon all adores" on public.adores;
 create policy "anon all adores" on public.adores for all to anon using (true) with check (true);
 
--- 实时同步（新表，直接添加即可）
-alter publication supabase_realtime add table public.adores;
+-- 实时同步（可重复执行）
+do $$
+begin
+  alter publication supabase_realtime add table public.adores;
+exception when duplicate_object then null;
+end $$;

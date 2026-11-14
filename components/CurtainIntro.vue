@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { siteConfig } from '~/data/site'
 import { usePassphrase } from '~/composables/usePassphrase'
 import { useIdentity, type IdentityKey } from '~/composables/useIdentity'
+import { useCover } from '~/composables/useCover'
 
 const emit = defineEmits<{ opened: [] }>()
 const { unlocked, tryUnlock } = usePassphrase()
 const { identityKey, identities, load: loadIdentity, choose } = useIdentity()
+const { showCover, hideCover } = useCover()
 
 const entering = ref(false)
 const askPass = ref(false)
@@ -17,8 +19,10 @@ const wrong = ref(false)
 const submitting = ref(false)
 
 onMounted(() => {
+  showCover()
   loadIdentity() // 读本设备已选身份
 })
+onUnmounted(() => hideCover())
 
 function onEnter() {
   if (entering.value || askPass.value || askWho.value) return
@@ -49,6 +53,7 @@ function finish() {
   emit('opened')
   setTimeout(() => {
     gone.value = true
+    hideCover()
   }, 700)
 }
 
@@ -102,8 +107,8 @@ async function submit() {
           type="password"
           autofocus
           class="w-56 rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-center text-sm tracking-widest text-white outline-none focus:border-white/50"
-          :class="wrong ? 'border-rose-400' : ''"
-        />
+          :class="wrong ? 'border-negative' : ''"
+        >
         <button
           type="submit"
           :disabled="submitting"
@@ -111,7 +116,7 @@ async function submit() {
         >
           {{ submitting ? '验证中…' : '进入' }}
         </button>
-        <p v-if="wrong" class="mt-3 text-xs text-rose-300">暗号不对哦</p>
+        <p v-if="wrong" class="mt-3 text-xs text-negative">暗号不对哦</p>
       </form>
     </div>
 
@@ -128,13 +133,13 @@ async function submit() {
           type="button"
           class="group flex min-w-[120px] flex-col items-center gap-2 rounded-2xl border px-6 py-5 transition active:scale-95"
           :class="who.key === 'npy'
-            ? 'border-sky-400/60 bg-sky-500/10 ring-1 ring-sky-400/40 hover:bg-sky-500/20'
+            ? 'border-accent/60 bg-accent/10 ring-1 ring-accent/40 hover:bg-accent/20'
             : 'border-white/15 bg-white/5 hover:border-white/40 hover:bg-white/10'"
           @click="pickWho(who.key)"
         >
           <span class="text-2xl transition group-hover:scale-110">{{ who.key === 'you' ? '🌙' : '⭐' }}</span>
           <span class="text-sm font-medium tracking-wide text-slate-100">{{ who.name }}</span>
-          <span v-if="who.key === 'npy'" class="text-[10px] tracking-wide text-sky-300/80">默认</span>
+          <span v-if="who.key === 'npy'" class="text-[10px] tracking-wide text-accent/80">默认</span>
         </button>
       </div>
       <p class="mt-6 text-[11px] tracking-wide text-slate-500">这台设备会记住你的选择</p>

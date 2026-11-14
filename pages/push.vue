@@ -2,6 +2,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { usePushbacks } from '~/composables/usePushbacks'
 import { useIdentity } from '~/composables/useIdentity'
+import { notifyError } from '~/utils/errors'
+import { formatRelative } from '~/utils/time'
 
 definePageMeta({ middleware: 'unlocked' })
 
@@ -18,9 +20,13 @@ const noteInput = ref('')
 
 async function submit() {
   if (!textInput.value.trim() || !identityKey.value || !canEdit.value) return
-  await addPushback(identityKey.value, textInput.value, noteInput.value)
-  textInput.value = ''
-  noteInput.value = ''
+  try {
+    await addPushback(identityKey.value, textInput.value, noteInput.value)
+    textInput.value = ''
+    noteInput.value = ''
+  } catch (err) {
+    notifyError('记录又推又推', err)
+  }
 }
 
 const editingId = ref<string | null>(null)
@@ -43,29 +49,27 @@ function cancelEdit() {
 async function saveEdit() {
   const id = editingId.value
   if (!id || !editText.value.trim()) return
-  await updatePushback(id, { text: editText.value, note: editNote.value })
-  editingId.value = null
-  editText.value = ''
-  editNote.value = ''
+  try {
+    await updatePushback(id, { text: editText.value, note: editNote.value })
+    editingId.value = null
+    editText.value = ''
+    editNote.value = ''
+  } catch (err) {
+    notifyError('保存记录', err)
+  }
 }
 
-function confirmRemove(id: string, text: string) {
-  if (confirm(`删除「${text}」？`)) removePushback(id)
+async function confirmRemove(id: string, text: string) {
+  if (!confirm(`删除「${text}」？`)) return
+  try {
+    await removePushback(id)
+  } catch (err) {
+    notifyError('删除记录', err)
+  }
 }
 
 function fmt(at: number) {
-  const d = new Date(at)
-  const now = Date.now()
-  const diff = now - at
-  const mins = Math.floor(diff / 60000)
-  const hours = Math.floor(diff / 3600000)
-  const days = Math.floor(diff / 86400000)
-  if (mins < 1) return '刚刚'
-  if (mins < 60) return `${mins} 分钟前`
-  if (hours < 24) return `${hours} 小时前`
-  if (days === 1) return '昨天'
-  if (days < 7) return `${days} 天前`
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  return formatRelative(at)
 }
 </script>
 
@@ -92,7 +96,7 @@ function fmt(at: number) {
             maxlength="500"
             placeholder="她说了什么…"
             class="surface-input w-full rounded-xl px-4 py-2.5 text-sm outline-none"
-          />
+          >
           <div class="flex gap-2">
             <input
               v-model="noteInput"
@@ -100,7 +104,7 @@ function fmt(at: number) {
               maxlength="500"
               placeholder="备注（可选：你的感受 / 背景）"
               class="surface-input min-w-0 flex-1 rounded-xl px-4 py-2.5 text-sm outline-none"
-            />
+            >
             <button
               type="submit"
               class="surface-button shrink-0 rounded-xl px-4 py-2.5 text-sm font-medium"
@@ -114,43 +118,43 @@ function fmt(at: number) {
           <div
             v-for="p in pushbacks"
             :key="p.id"
-            class="group relative rounded-xl border border-white/10 bg-white/5 px-4 py-3 transition hover:border-rose-400/20"
+            class="group relative rounded-xl border border-white/10 bg-white/5 px-4 py-3 transition hover:border-negative/20"
           >
             <template v-if="editingId === p.id">
               <input
                 v-model="editText"
                 type="text"
                 maxlength="500"
-                class="w-full rounded-lg border border-rose-400/40 bg-white/5 px-3 py-2 text-sm text-slate-100 outline-none"
-              />
+                class="w-full rounded-lg border border-negative/40 bg-white/5 px-3 py-2 text-sm text-slate-100 outline-none"
+              >
               <input
                 v-model="editNote"
                 type="text"
                 maxlength="500"
                 placeholder="备注"
                 class="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-300 outline-none"
-              />
+              >
               <div class="mt-2 flex justify-end gap-2 text-xs">
                 <button class="rounded-md px-2.5 py-1 text-slate-400 hover:text-slate-200" @click="cancelEdit">取消</button>
-                <button class="rounded-md bg-rose-500/90 px-2.5 py-1 font-medium text-white hover:bg-rose-400" @click="saveEdit">保存</button>
+                <button class="rounded-md bg-negative/90 px-2.5 py-1 font-medium text-white hover:brightness-110" @click="saveEdit">保存</button>
               </div>
             </template>
 
             <template v-else>
               <div class="mb-2 flex items-center justify-between">
-                <span class="text-xs tabular-nums text-rose-400/70">{{ fmt(p.at) }}</span>
+                <span class="text-xs tabular-nums text-negative/70">{{ fmt(p.at) }}</span>
               </div>
               <p class="break-words text-sm leading-relaxed text-slate-100">
-                <span class="mr-1.5 text-rose-400/60">「</span>{{ p.text }}<span class="ml-1.5 text-rose-400/60">」</span>
+                <span class="mr-1.5 text-negative/60">「</span>{{ p.text }}<span class="ml-1.5 text-negative/60">」</span>
               </p>
               <p v-if="p.note" class="mt-1.5 break-words text-xs leading-relaxed text-slate-500">
                 {{ p.note }}
               </p>
               <div v-if="canEdit" class="mt-2 flex justify-end gap-3 text-slate-600 opacity-0 transition group-hover:opacity-100">
-                  <button class="transition hover:text-rose-300" title="编辑" @click="startEdit(p)">
+                  <button class="transition hover:text-negative" title="编辑" @click="startEdit(p)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z" stroke-linecap="round" stroke-linejoin="round" /></svg>
                   </button>
-                  <button class="transition hover:text-rose-400" title="删除" @click="confirmRemove(p.id, p.text)">
+                  <button class="transition hover:text-negative" title="删除" @click="confirmRemove(p.id, p.text)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round" /></svg>
                   </button>
                 </div>

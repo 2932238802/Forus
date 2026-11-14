@@ -43,7 +43,6 @@ function onCatClick() {
       <button
         class="fixed bottom-20 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full border border-white/15 bg-black/50 text-3xl shadow-lg backdrop-blur-md transition hover:scale-110 active:scale-95"
         :title="open ? '收起尚锦' : '找尚锦聊天'"
-        @pointerdown="onPointerDown"
         @click="onCatClick"
       >
         <span class="transition-transform" :class="open ? 'scale-90' : ''">{{ open ? '🐾' : '🐱' }}</span>
@@ -81,7 +80,7 @@ function onCatClick() {
               <div
                 class="max-w-[80%] whitespace-pre-wrap break-words rounded-2xl px-3 py-2 text-sm leading-relaxed"
                 :class="m.role === 'user'
-                  ? 'rounded-tr-sm bg-sky-500/90 text-white'
+                  ? 'rounded-tr-sm bg-accent/90 text-white'
                   : 'rounded-tl-sm bg-white/10 text-slate-100'"
               >
                 {{ m.content }}
@@ -100,12 +99,12 @@ function onCatClick() {
               maxlength="500"
               :disabled="thinking"
               placeholder="和尚锦说说话…"
-              class="min-w-0 flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-100 outline-none focus:border-sky-400 disabled:opacity-50"
-            />
+              class="min-w-0 flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-100 outline-none focus:border-accent disabled:opacity-50"
+            >
             <button
               type="submit"
               :disabled="thinking || !input.trim()"
-              class="shrink-0 rounded-lg bg-sky-500 px-3 py-2 text-sm font-medium text-white transition hover:bg-sky-400 active:scale-95 disabled:opacity-50"
+              class="shrink-0 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-white transition hover:brightness-110 active:scale-95 disabled:opacity-50"
             >
               发送
             </button>

@@ -2,6 +2,7 @@
 import { ref, reactive, computed, watch, onUnmounted } from 'vue'
 import type { MediaItem } from '~/types'
 import { useMedia } from '~/composables/useMedia'
+import { notifyError } from '~/utils/errors'
 
 const { media, addItem, updateItem, removeItem, uploadFile } = useMedia()
 
@@ -47,8 +48,8 @@ async function onFilePick(e: Event) {
     const { url, kind } = await uploadFile(file)
     form.url = url
     form.kind = kind
-  } catch (err: any) {
-    alert('上传失败：' + (err?.message || err))
+  } catch (err) {
+    notifyError('上传', err)
   } finally {
     saving.value = false
   }
@@ -65,15 +66,20 @@ async function save() {
     if (editingId.value) await updateItem(editingId.value, payload)
     else await addItem(payload)
     showEditor.value = false
-  } catch (err: any) {
-    alert('保存失败：' + (err?.message || err))
+  } catch (err) {
+    notifyError('保存媒体', err)
   } finally {
     saving.value = false
   }
 }
 
 async function confirmRemove(item: MediaItem) {
-  if (confirm('确定删除这张吗？')) await removeItem(item.id)
+  if (!confirm('确定删除这张吗？')) return
+  try {
+    await removeItem(item.id)
+  } catch (err) {
+    notifyError('删除媒体', err)
+  }
 }
 
 // ============ 大图查看器（Lightbox）============
@@ -140,7 +146,7 @@ function onTouchEnd(e: TouchEvent) {
   <div class="flex h-full flex-col">
     <div class="mb-2 flex shrink-0 justify-end">
       <button
-        class="flex h-7 w-7 items-center justify-center rounded-full bg-sky-500 text-white transition hover:bg-sky-400 active:scale-95"
+        class="flex h-7 w-7 items-center justify-center rounded-full bg-accent text-white transition hover:brightness-110 active:scale-95"
         title="添加"
         @click="openAdd"
       >
@@ -163,21 +169,21 @@ function onTouchEnd(e: TouchEvent) {
           <span class="shrink-0 text-base">{{ item.kind === 'video' ? '🎬' : '🖼️' }}</span>
           <!-- 标题 + 日期（点击打开大图） -->
           <button class="min-w-0 flex-1 text-left" @click="openViewer(item)">
-            <p class="truncate text-sm text-slate-200 transition group-hover:text-sky-300">
+            <p class="truncate text-sm text-slate-200 transition group-hover:text-accent">
               {{ item.title || (item.kind === 'video' ? '未命名视频' : '未命名图片') }}
             </p>
             <p v-if="item.date" class="text-[10px] tabular-nums text-slate-500">{{ item.date }}</p>
           </button>
           <!-- 查看 -->
-          <button class="shrink-0 text-slate-500 transition hover:text-sky-300" title="查看" @click="openViewer(item)">
+          <button class="shrink-0 text-slate-500 transition hover:text-accent" title="查看" @click="openViewer(item)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" stroke-linecap="round" stroke-linejoin="round" /><circle cx="12" cy="12" r="3" /></svg>
           </button>
           <!-- 编辑 -->
-          <button class="shrink-0 text-slate-600 opacity-0 transition hover:text-sky-300 group-hover:opacity-100" title="编辑" @click="openEdit(item)">
+          <button class="shrink-0 text-slate-600 opacity-0 transition hover:text-accent group-hover:opacity-100" title="编辑" @click="openEdit(item)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4 12.5-12.5z" stroke-linecap="round" stroke-linejoin="round" /></svg>
           </button>
           <!-- 删除 -->
-          <button class="shrink-0 text-slate-600 opacity-0 transition hover:text-rose-400 group-hover:opacity-100" title="删除" @click="confirmRemove(item)">
+          <button class="shrink-0 text-slate-600 opacity-0 transition hover:text-negative group-hover:opacity-100" title="删除" @click="confirmRemove(item)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round" /></svg>
           </button>
         </li>
@@ -196,7 +202,7 @@ function onTouchEnd(e: TouchEvent) {
           <h3 class="text-base font-semibold text-slate-100">{{ editingId ? '编辑' : '添加' }}</h3>
 
           <div v-if="form.url" class="mt-4 overflow-hidden rounded-xl border border-white/10">
-            <img v-if="form.kind === 'image'" :src="form.url" class="max-h-48 w-full object-cover" />
+            <img v-if="form.kind === 'image'" :src="form.url" class="max-h-48 w-full object-cover" >
             <video v-else :src="form.url" controls class="max-h-48 w-full" />
           </div>
 
@@ -205,22 +211,22 @@ function onTouchEnd(e: TouchEvent) {
             <input
               type="file"
               accept="image/*,video/*"
-              class="mt-1.5 block w-full text-xs text-slate-400 file:mr-3 file:cursor-pointer file:rounded-full file:border-0 file:bg-sky-500/20 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-sky-300"
+              class="mt-1.5 block w-full text-xs text-slate-400 file:mr-3 file:cursor-pointer file:rounded-full file:border-0 file:bg-accent/20 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-accent"
               @change="onFilePick"
-            />
-            <p v-if="saving" class="mt-1 text-xs text-sky-300">处理中…</p>
+            >
+            <p v-if="saving" class="mt-1 text-xs text-accent">处理中…</p>
           </div>
 
-          <input v-model="form.url" type="text" placeholder="或粘贴链接 https://..." class="mt-3 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-100 outline-none focus:border-sky-400" />
+          <input v-model="form.url" type="text" placeholder="或粘贴链接 https://..." class="mt-3 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-100 outline-none focus:border-accent" >
 
           <div class="mt-3 grid gap-2">
-            <input v-model="form.title" type="text" placeholder="标题" class="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-100 outline-none focus:border-sky-400" />
-            <input v-model="form.date" type="date" class="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-300 outline-none focus:border-sky-400" />
+            <input v-model="form.title" type="text" placeholder="标题" class="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-100 outline-none focus:border-accent" >
+            <input v-model="form.date" type="date" class="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-300 outline-none focus:border-accent" >
           </div>
 
           <div class="mt-5 flex justify-end gap-2">
             <button class="rounded-full px-4 py-2 text-sm text-slate-400 hover:bg-white/5" @click="showEditor = false">取消</button>
-            <button :disabled="saving" class="rounded-full bg-sky-500 px-5 py-2 text-sm font-medium text-white hover:bg-sky-400 active:scale-95 disabled:opacity-50" @click="save">保存</button>
+            <button :disabled="saving" class="rounded-full bg-accent px-5 py-2 text-sm font-medium text-white hover:brightness-110 active:scale-95 disabled:opacity-50" @click="save">保存</button>
           </div>
         </div>
       </div>
@@ -273,7 +279,7 @@ function onTouchEnd(e: TouchEvent) {
               :src="viewing.url"
               :alt="viewing.title"
               class="max-h-[82vh] max-w-[92vw] rounded-lg object-contain"
-            />
+            >
             <video
               v-else
               :src="viewing.url"

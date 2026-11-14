@@ -8,6 +8,11 @@ export default defineNuxtConfig({
   runtimeConfig: {
     passphrase: process.env.NUXT_PASSPHRASE || '622',
     authSecret: process.env.NUXT_AUTH_SECRET || 'forus-dev-secret-change-me',
+    // Server-only Supabase service role key, used by letters / cat / storage APIs.
+    supabaseServiceKey:
+      process.env.SUPABASE_SERVICE_ROLE_KEY ||
+      process.env.NUXT_SUPABASE_SERVICE_ROLE_KEY ||
+      '',
     // OpenAI-compatible API configuration for Cat Chat.
     catApiBase: process.env.NUXT_CAT_API_BASE || 'https://wawapii.com/v1',
     catApiKey: process.env.NUXT_CAT_API_KEY || '',
@@ -23,6 +28,7 @@ export default defineNuxtConfig({
     '@nuxtjs/tailwindcss',
     '@vueuse/nuxt',
     '@nuxtjs/supabase',
+    '@nuxt/eslint',
   ],
 
   supabase: {

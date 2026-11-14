@@ -1,5 +1,5 @@
 import { ref, onMounted, onUnmounted } from 'vue'
-import { useSupabaseClient } from '#imports'
+import { useDb } from '~/composables/useDb'
 import type { IdentityKey } from '~/composables/useIdentity'
 
 /**
@@ -14,7 +14,7 @@ export interface Adore {
 }
 
 export function useAdores() {
-  const supabase = useSupabaseClient()
+  const supabase = useDb()
   const adores = ref<Adore[]>([])
 
   function mapRow(r: any): Adore {
@@ -48,7 +48,8 @@ export function useAdores() {
   }
 
   async function removeAdore(id: string) {
-    await supabase.from('adores').delete().eq('id', id)
+    const { error } = await supabase.from('adores').delete().eq('id', id)
+    if (error) throw error
   }
 
   let channel: any = null

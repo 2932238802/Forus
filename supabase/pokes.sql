@@ -26,5 +26,9 @@ alter table public.pokes enable row level security;
 drop policy if exists "anon all pokes" on public.pokes;
 create policy "anon all pokes" on public.pokes for all to anon using (true) with check (true);
 
--- 实时同步（可选：开启后将来也能实时收到）
-alter publication supabase_realtime add table public.pokes;
+-- 实时同步（可重复执行）
+do $$
+begin
+  alter publication supabase_realtime add table public.pokes;
+exception when duplicate_object then null;
+end $$;

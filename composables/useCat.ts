@@ -1,5 +1,4 @@
 import { ref, onMounted } from 'vue'
-import { useSupabaseClient } from '#imports'
 
 export interface CatMessage {
   id?: string
@@ -8,55 +7,63 @@ export interface CatMessage {
   at: number
 }
 
+interface ApiCatMessage {
+  id: string
+  role: string
+  content: string
+  created_at: string
+}
+
+interface CatMessagesResponse {
+  ok: boolean
+  messages: ApiCatMessage[]
+}
+
 export function useCat() {
-  const supabase = useSupabaseClient()
   const messages = ref<CatMessage[]>([])
   const thinking = ref(false)
 
-  function mapRow(r: any): CatMessage {
+  function mapRow(row: ApiCatMessage): CatMessage {
     return {
-      id: r.id,
-      role: r.role === 'assistant' ? 'assistant' : 'user',
-      content: r.content,
-      at: new Date(r.created_at).getTime(),
+      id: row.id,
+      role: row.role === 'assistant' ? 'assistant' : 'user',
+      content: row.content,
+      at: new Date(row.created_at).getTime(),
     }
   }
 
   async function fetchHistory() {
-    const { data, error } = await supabase
-      .from('cat_messages')
-      .select('*')
-      .order('created_at', { ascending: true })
-      .limit(100)
-    if (!error && data) messages.value = data.map(mapRow)
+    try {
+      const res = await $fetch<CatMessagesResponse>('/api/cat-messages')
+      if (res?.ok) messages.value = res.messages.map(mapRow)
+    } catch (err) {
+      console.warn('[cat] 加载历史失败', err)
+    }
   }
 
-  async function saveMessage(role: 'user' | 'assistant', content: string) {
-    await supabase.from('cat_messages').insert({ role, content })
-  }
-
-  /** 发一条消息给小猫，拿回复 */
+  /**
+   * 发一条消息给小猫。
+   * 历史由服务端读取并持久化，客户端只负责展示；对话在两个人之间共享。
+   */
   async function send(text: string) {
     const msg = text.trim()
     if (!msg || thinking.value) return
-    // 先本地显示用户消息
+
     messages.value.push({ role: 'user', content: msg, at: Date.now() })
-    saveMessage('user', msg)
     thinking.value = true
     try {
-      // 取最近 10 条作为上下文
-      const history = messages.value
-        .slice(-11, -1)
-        .map((m) => ({ role: m.role, content: m.content }))
-      const res = await $fetch<{ ok: boolean; reply?: string; error?: string }>('/api/cat', {
-        method: 'POST',
-        body: { message: msg, history },
-      })
-      const reply = res.ok && res.reply ? res.reply : (res.error || '喵…')
+      const res = await $fetch<{ ok: boolean; reply?: string; error?: string }>(
+        '/api/cat',
+        { method: 'POST', body: { message: msg } },
+      )
+      const reply = res.ok && res.reply ? res.reply : res.error || '喵…'
       messages.value.push({ role: 'assistant', content: reply, at: Date.now() })
-      if (res.ok && res.reply) saveMessage('assistant', reply)
     } catch {
-      messages.value.push({ role: 'assistant', content: '喵…小猫走神了，再叫我一声嘛～', at: Date.now() })
+      messages.value.push({
+        role: 'assistant',
+        content: '喵…小猫走神了，再叫我一声嘛～',
+        at: Date.now(),
+      })
     } finally {
       thinking.value = false
     }

@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useAdores } from '~/composables/useAdores'
 import { useIdentity, type IdentityKey } from '~/composables/useIdentity'
+import { notifyError } from '~/utils/errors'
 
 definePageMeta({ middleware: 'unlocked' })
 
@@ -31,8 +32,12 @@ const input = ref('')
 async function submit() {
   const t = input.value
   if (!t?.trim() || !isPartnerView.value) return
-  await addAdore(viewing.value, t)
-  input.value = ''
+  try {
+    await addAdore(viewing.value, t)
+    input.value = ''
+  } catch (err) {
+    notifyError('记录喜欢', err)
+  }
 }
 
 // ---- 行内编辑 ----
@@ -45,17 +50,28 @@ function startEdit(id: string, text: string) {
 }
 async function saveEdit() {
   const id = editingId.value
-  if (id && editText.value.trim()) await updateAdore(id, { text: editText.value })
-  editingId.value = null
-  editText.value = ''
+  if (!id) return
+  if (!editText.value.trim()) return
+  try {
+    await updateAdore(id, { text: editText.value })
+    editingId.value = null
+    editText.value = ''
+  } catch (err) {
+    notifyError('保存喜欢', err)
+  }
 }
 function cancelEdit() {
   editingId.value = null
   editText.value = ''
 }
 
-function confirmRemove(id: string, name: string) {
-  if (confirm(`删除「${name}」？`)) removeAdore(id)
+async function confirmRemove(id: string, name: string) {
+  if (!confirm(`删除「${name}」？`)) return
+  try {
+    await removeAdore(id)
+  } catch (err) {
+    notifyError('删除喜欢', err)
+  }
 }
 </script>
 
@@ -64,9 +80,9 @@ function confirmRemove(id: string, name: string) {
     <NavBar />
     <div class="mx-auto w-full max-w-[900px] p-4 sm:p-6">
       <div class="mb-5 flex items-center justify-center gap-2 px-1 text-center">
-        <span class="h-px w-10 bg-gradient-to-r from-transparent to-rose-400/50" />
-        <h1 class="bg-gradient-to-r from-rose-200 via-pink-300 to-rose-400 bg-clip-text text-2xl font-semibold tracking-[0.08em] text-transparent">Adore!!</h1>
-        <span class="h-px w-10 bg-gradient-to-l from-transparent to-rose-400/50" />
+        <span class="h-px w-10 bg-gradient-to-r from-transparent to-negative/50" />
+        <h1 class="bg-gradient-to-r from-negative via-pink-300 to-negative bg-clip-text text-2xl font-semibold tracking-[0.08em] text-transparent">Adore!!</h1>
+        <span class="h-px w-10 bg-gradient-to-l from-transparent to-negative/50" />
       </div>
 
       <!-- 切人 -->
@@ -76,7 +92,7 @@ function confirmRemove(id: string, name: string) {
           :key="who.key"
           type="button"
           class="flex-1 rounded-lg py-1.5 transition"
-          :class="viewing === who.key ? 'bg-gradient-to-r from-rose-400 to-pink-500 text-white shadow-lg shadow-rose-500/20' : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'"
+          :class="viewing === who.key ? 'bg-gradient-to-r from-negative to-pink-500 text-white shadow-lg shadow-negative/20' : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'"
           @click="viewing = who.key"
         >
           {{ who.name }}
@@ -91,11 +107,11 @@ function confirmRemove(id: string, name: string) {
           type="text"
           maxlength="2000"
           placeholder="TA 的一个优点 / 让你心动的地方…"
-          class="surface-input min-w-0 flex-1 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-rose-400 focus:shadow-[0_0_0_3px_rgba(251,113,133,0.12)]"
-        />
+          class="surface-input min-w-0 flex-1 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-negative focus:shadow-[0_0_0_3px_rgba(var(--negative-rgb),0.12)]"
+        >
         <button
           type="submit"
-          class="shrink-0 rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 px-4 py-2.5 text-sm font-medium text-white transition hover:brightness-110 active:scale-95"
+          class="shrink-0 rounded-xl bg-gradient-to-r from-negative to-pink-500 px-4 py-2.5 text-sm font-medium text-white transition hover:brightness-110 active:scale-95"
         >
           ♥ 记下
         </button>
@@ -103,7 +119,7 @@ function confirmRemove(id: string, name: string) {
 
       <!-- 计数 -->
       <p class="mb-3 px-1 text-center text-xs text-slate-500">
-        已记下 <span class="font-medium text-rose-300">{{ list.length }}</span> 个喜欢 {{ nameOf(viewing) }} 的理由
+        已记下 <span class="font-medium text-negative">{{ list.length }}</span> 个喜欢 {{ nameOf(viewing) }} 的理由
       </p>
 
       <!-- 优点卡片列表 -->
@@ -116,10 +132,10 @@ function confirmRemove(id: string, name: string) {
           <div class="pointer-events-none absolute -right-2 -top-3 select-none text-5xl opacity-10 transition group-hover:opacity-20">♥</div>
 
           <div class="mb-2 flex items-center gap-2">
-            <span class="flex h-5 w-5 items-center justify-center rounded-full bg-rose-500/20 text-[10px] font-medium text-rose-300">
+            <span class="flex h-5 w-5 items-center justify-center rounded-full bg-negative/20 text-[10px] font-medium text-negative">
               {{ i + 1 }}
             </span>
-            <span class="text-[10px] uppercase tracking-widest text-rose-400/60">Adore</span>
+            <span class="text-[10px] uppercase tracking-widest text-negative/60">Adore</span>
           </div>
 
           <!-- 编辑态 -->
@@ -128,13 +144,13 @@ function confirmRemove(id: string, name: string) {
               v-model="editText"
               rows="2"
               maxlength="2000"
-              class="w-full resize-none rounded-lg border border-rose-400/40 bg-white/5 px-3 py-2 text-sm text-slate-100 outline-none focus:border-rose-400"
+              class="w-full resize-none rounded-lg border border-negative/40 bg-white/5 px-3 py-2 text-sm text-slate-100 outline-none focus:border-negative"
               @keydown.enter.prevent="saveEdit"
               @keydown.esc="cancelEdit"
             />
             <div class="mt-2 flex justify-end gap-2 text-xs">
               <button class="rounded-md px-2.5 py-1 text-slate-400 hover:text-slate-200" @click="cancelEdit">取消</button>
-              <button class="rounded-md bg-rose-500/90 px-2.5 py-1 font-medium text-white hover:bg-rose-400" @click="saveEdit">保存</button>
+              <button class="rounded-md bg-negative/90 px-2.5 py-1 font-medium text-white hover:brightness-110" @click="saveEdit">保存</button>
             </div>
           </template>
 
@@ -142,10 +158,10 @@ function confirmRemove(id: string, name: string) {
           <template v-else>
             <p class="break-words text-sm leading-relaxed text-slate-100">{{ a.text }}</p>
             <div v-if="isPartnerView" class="mt-2 flex justify-end gap-3 text-slate-600 opacity-0 transition group-hover:opacity-100">
-              <button class="transition hover:text-rose-300" title="编辑" @click="startEdit(a.id, a.text)">
+              <button class="transition hover:text-negative" title="编辑" @click="startEdit(a.id, a.text)">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z" stroke-linecap="round" stroke-linejoin="round" /></svg>
               </button>
-              <button class="transition hover:text-rose-400" title="删除" @click="confirmRemove(a.id, a.text)">
+              <button class="transition hover:text-negative" title="删除" @click="confirmRemove(a.id, a.text)">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round" /></svg>
               </button>
             </div>

@@ -1,5 +1,5 @@
 import { ref, onMounted, onUnmounted } from 'vue'
-import { useSupabaseClient } from '#imports'
+import { useDb } from '~/composables/useDb'
 import type { IdentityKey } from '~/composables/useIdentity'
 
 export type LikeKind = 'like' | 'dislike'
@@ -23,7 +23,7 @@ export const CATEGORIES: { key: LikeCategory; label: string; emoji: string }[] =
 ]
 
 export function useLikes() {
-  const supabase = useSupabaseClient()
+  const supabase = useDb()
   const likes = ref<Like[]>([])
 
   function mapRow(r: any): Like {
@@ -52,7 +52,10 @@ export function useLikes() {
     text: string,
   ) {
     if (!text.trim()) return
-    await supabase.from('likes').insert({ owner, kind, category, text: text.trim() })
+    const { error } = await supabase
+      .from('likes')
+      .insert({ owner, kind, category, text: text.trim() })
+    if (error) throw error
   }
 
   /** 通用更新（拖拽换喜欢/不喜欢栏 → 改 kind；换分类 → 改 category） */
@@ -65,7 +68,8 @@ export function useLikes() {
   }
 
   async function removeLike(id: string) {
-    await supabase.from('likes').delete().eq('id', id)
+    const { error } = await supabase.from('likes').delete().eq('id', id)
+    if (error) throw error
   }
 
   let channel: any = null

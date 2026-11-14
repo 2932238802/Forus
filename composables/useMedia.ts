@@ -1,9 +1,11 @@
 import { ref, onMounted, onUnmounted } from 'vue'
-import { useSupabaseClient } from '#imports'
+import { useDb } from '~/composables/useDb'
 import type { MediaItem } from '~/types'
+import { useMediaUpload } from '~/composables/useMediaUpload'
 
 export function useMedia() {
-  const supabase = useSupabaseClient()
+  const supabase = useDb()
+  const { upload, removeUrl } = useMediaUpload()
   const media = ref<MediaItem[]>([])
   const loading = ref(true)
 
@@ -30,18 +32,8 @@ export function useMedia() {
 
   /** 上传文件到 Supabase Storage，返回公链（图片自动压缩） */
   async function uploadFile(file: File): Promise<{ url: string; kind: 'image' | 'video' }> {
-    const kind = file.type.startsWith('video') ? 'video' : 'image'
-    // 图片上传前自动压缩（视频原样）
-    const finalFile = kind === 'image' ? await compressImage(file) : file
-    const ext = finalFile.name.split('.').pop() || 'bin'
-    const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
-    const { error } = await supabase.storage.from('media').upload(path, finalFile, {
-      cacheControl: '3600',
-      upsert: false,
-    })
-    if (error) throw error
-    const { data } = supabase.storage.from('media').getPublicUrl(path)
-    return { url: data.publicUrl, kind }
+    const { url, kind } = await upload(file)
+    return { url, kind }
   }
 
   async function addItem(item: Omit<MediaItem, 'id'>) {
@@ -68,21 +60,12 @@ export function useMedia() {
       .eq('id', id)
     if (error) throw error
     if (prev && patch.url && patch.url !== prev.url) {
-      const oldPath = extractStoragePath(prev.url)
-      if (oldPath) {
-        const { error: storageErr } = await supabase.storage.from('media').remove([oldPath])
-        if (storageErr) console.warn('[useMedia] 清理旧 Storage 文件失败：', storageErr.message)
+      try {
+        await removeUrl(prev.url)
+      } catch (err) {
+        console.warn('[useMedia] 清理旧 Storage 文件失败：', err)
       }
     }
-  }
-
-  /** 从 Supabase Storage 公链中解析出 bucket 内的文件路径；非本站存储返回 null */
-  function extractStoragePath(url: string): string | null {
-    // 公链格式：.../storage/v1/object/public/media/<path>
-    const marker = '/storage/v1/object/public/media/'
-    const idx = url.indexOf(marker)
-    if (idx === -1) return null
-    return decodeURIComponent(url.slice(idx + marker.length))
   }
 
   async function removeItem(id: string) {
@@ -90,12 +73,13 @@ export function useMedia() {
     const target = media.value.find((m) => m.id === id)
     const { error } = await supabase.from('media').delete().eq('id', id)
     if (error) throw error
-    // 仅清理本站 Storage 内的文件（外链不处理）
-    const path = target ? extractStoragePath(target.url) : null
-    if (path) {
-      // 删文件失败不阻断主流程，记录到控制台即可
-      const { error: storageErr } = await supabase.storage.from('media').remove([path])
-      if (storageErr) console.warn('[useMedia] 清理 Storage 文件失败：', storageErr.message)
+    // 仅清理本站 Storage 内的文件（外链自动忽略）；失败不阻断主流程
+    if (target?.url) {
+      try {
+        await removeUrl(target.url)
+      } catch (err) {
+        console.warn('[useMedia] 清理 Storage 文件失败：', err)
+      }
     }
   }
 

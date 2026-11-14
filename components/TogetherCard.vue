@@ -1,13 +1,25 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { siteConfig } from '~/data/site'
 import { togetherDuration, nextAnniversary, formatDate, todayCelebration } from '~/utils/date'
 import { usePassphrase } from '~/composables/usePassphrase'
 import { useIdentity } from '~/composables/useIdentity'
 import { usePokes } from '~/composables/usePokes'
+import { useToday } from '~/composables/useToday'
+import { notifyError } from '~/utils/errors'
+
+const { identityKey, partnerOf, nameOf, load: loadIdentity } = useIdentity()
+const { today } = useToday()
 
 // 今天是否特殊日子（用于常驻小徽章）
-const celebration = todayCelebration()
+const celebration = computed(() =>
+  today.value ? todayCelebration(today.value) : null,
+)
+
+// 自动计算下一个还没到的周年（过期后自动滚到下一年）
+const anniv = computed(() =>
+  today.value ? nextAnniversary(siteConfig.startDate, today.value) : null,
+)
 
 // 重放彩蛋：清掉当天「已放过」标记后刷新，首页会重新触发
 function replayCelebration() {
@@ -37,11 +49,7 @@ onUnmounted(() => {
 
 const pad = (n: number) => String(n).padStart(2, '0')
 
-// 自动计算下一个还没到的周年（过期后自动滚到下一年）
-const anniv = nextAnniversary()
-
 // 想你了
-const { identityKey, partnerOf, nameOf, load: loadIdentity } = useIdentity()
 const { sendPoke } = usePokes()
 const poking = ref(false)
 const justPoked = ref(false)
@@ -56,8 +64,8 @@ async function poke() {
     await sendPoke(me, ta)
     justPoked.value = true
     setTimeout(() => (justPoked.value = false), 2600)
-  } catch {
-    /* 静默失败 */
+  } catch (err) {
+    notifyError('送达', err)
   } finally {
     // 冷却 3 秒，防连点刷屏
     setTimeout(() => (poking.value = false), 3000)
@@ -82,7 +90,7 @@ async function leave() {
         <!-- 特殊日子徽章（点击重放彩蛋） -->
         <button
           v-if="celebration"
-          class="mt-2 inline-flex items-center gap-1 rounded-full border border-rose-400/30 bg-rose-500/10 px-2.5 py-1 text-[11px] font-medium text-rose-200 transition hover:bg-rose-500/20 active:scale-95"
+          class="mt-2 inline-flex items-center gap-1 rounded-full border border-negative/30 bg-negative/10 px-2.5 py-1 text-[11px] font-medium text-negative transition hover:bg-negative/20 active:scale-95"
           title="再放一次"
           @click="replayCelebration"
         >
@@ -109,7 +117,7 @@ async function leave() {
         <span class="text-sm text-slate-500">时</span>
         <span class="text-2xl">{{ pad(dur.minutes) }}</span>
         <span class="text-sm text-slate-500">分</span>
-        <span class="text-2xl text-sky-300">{{ pad(dur.seconds) }}</span>
+        <span class="text-2xl text-accent">{{ pad(dur.seconds) }}</span>
         <span class="text-sm text-slate-500">秒</span>
       </div>
       <p class="mt-3 text-xs tracking-wide text-slate-500">
@@ -118,7 +126,7 @@ async function leave() {
 
       <!-- 想你了（小巧，时间区右下角） -->
       <button
-        class="group absolute bottom-0 right-0 flex items-center gap-1 rounded-full border border-rose-400/30 bg-rose-500/10 px-2.5 py-1 text-[11px] font-medium text-rose-200 transition hover:border-rose-400/60 hover:bg-rose-500/20 active:scale-95 disabled:opacity-60"
+        class="group absolute bottom-0 right-0 flex items-center gap-1 rounded-full border border-negative/30 bg-negative/10 px-2.5 py-1 text-[11px] font-medium text-negative transition hover:border-negative/60 hover:bg-negative/20 active:scale-95 disabled:opacity-60"
         :disabled="poking"
         :title="`想 ${nameOf(partnerOf(identityKey)) || 'TA'} 了`"
         @click="poke"
@@ -130,9 +138,9 @@ async function leave() {
       </button>
     </div>
 
-    <div class="border-t border-white/10 pt-3 text-xs tracking-wide text-slate-400">
+    <div v-if="anniv" class="border-t border-white/10 pt-3 text-xs tracking-wide text-slate-400">
       <span v-if="anniv.daysLeft > 0">距 {{ anniv.label }} · {{ anniv.daysLeft }} 天</span>
-      <span v-else class="text-sky-300">🎉 今天就是 {{ anniv.label }} 纪念日！</span>
+      <span v-else class="text-accent">🎉 今天就是 {{ anniv.label }} 纪念日！</span>
     </div>
   </div>
 </template>

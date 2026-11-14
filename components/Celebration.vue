@@ -2,7 +2,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import type { Celebration } from '~/utils/date'
 
-const props = defineProps<{ celebration: Celebration }>()
+defineProps<{ celebration: Celebration }>()
 const emit = defineEmits<{ done: [] }>()
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)

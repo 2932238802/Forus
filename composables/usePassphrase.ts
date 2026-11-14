@@ -6,8 +6,9 @@ const ready = ref(false) // 是否已完成首次服务端状态校验
 let inflight: Promise<void> | null = null
 
 export function usePassphrase() {
-  /** 向服务端确认当前是否已解锁（校验 HttpOnly Cookie），只查一次 */
-  async function refresh() {
+  /** 向服务端确认当前是否已解锁（校验 HttpOnly Cookie）。默认复用已确认状态。 */
+  async function refresh(force = false) {
+    if (!force && ready.value) return
     if (inflight) return inflight
     inflight = (async () => {
       try {
@@ -30,6 +31,7 @@ export function usePassphrase() {
         body: { passphrase: input.trim() },
       })
       unlocked.value = true
+      ready.value = true
       return true
     } catch {
       return false
@@ -44,6 +46,7 @@ export function usePassphrase() {
       /* ignore */
     }
     unlocked.value = false
+    ready.value = true
   }
 
   return { unlocked, ready, refresh, tryUnlock, lock }

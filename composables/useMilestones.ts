@@ -1,9 +1,9 @@
 import { ref, onMounted, onUnmounted } from 'vue'
-import { useSupabaseClient } from '#imports'
+import { useDb } from '~/composables/useDb'
 import type { Milestone } from '~/types'
 
 export function useMilestones() {
-  const supabase = useSupabaseClient()
+  const supabase = useDb()
   const milestones = ref<Milestone[]>([])
 
   function mapRow(row: any): Milestone {
@@ -26,16 +26,17 @@ export function useMilestones() {
   }
 
   async function addMilestone(m: Omit<Milestone, 'id' | 'description'>) {
-    await supabase.from('milestones').insert({
+    const { error } = await supabase.from('milestones').insert({
       title: m.title,
       date: m.date,
       type: m.type,
       emoji: m.emoji || '🤍',
     })
+    if (error) throw error
   }
 
   async function updateMilestone(id: string, m: Partial<Omit<Milestone, 'id' | 'description'>>) {
-    await supabase
+    const { error } = await supabase
       .from('milestones')
       .update({
         title: m.title,
@@ -44,10 +45,12 @@ export function useMilestones() {
         emoji: m.emoji || '🤍',
       })
       .eq('id', id)
+    if (error) throw error
   }
 
   async function removeMilestone(id: string) {
-    await supabase.from('milestones').delete().eq('id', id)
+    const { error } = await supabase.from('milestones').delete().eq('id', id)
+    if (error) throw error
   }
 
   let channel: any = null

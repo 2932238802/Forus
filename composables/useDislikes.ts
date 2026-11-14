@@ -1,5 +1,5 @@
 import { ref, onMounted, onUnmounted } from 'vue'
-import { useSupabaseClient } from '#imports'
+import { useDb } from '~/composables/useDb'
 import type { IdentityKey } from '~/composables/useIdentity'
 
 export interface Dislike {
@@ -10,7 +10,7 @@ export interface Dislike {
 }
 
 export function useDislikes() {
-  const supabase = useSupabaseClient()
+  const supabase = useDb()
   const dislikes = ref<Dislike[]>([])
 
   function mapRow(row: any): Dislike {

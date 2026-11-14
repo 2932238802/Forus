@@ -22,6 +22,15 @@ export default <Partial<Config>>{
           soft: '#22D3EE',
         },
         mist: '#ECFEFF',     // 浅青背景柔光
+
+        // 语义色：跟随 data-theme 的 CSS 变量（星空 / 樱花）
+        accent: {
+          DEFAULT: 'rgb(var(--accent-rgb) / <alpha-value>)',
+          soft: 'rgb(var(--accent-2-rgb) / <alpha-value>)',
+        },
+        positive: 'rgb(var(--positive-rgb) / <alpha-value>)',
+        negative: 'rgb(var(--negative-rgb) / <alpha-value>)',
+        warning: 'rgb(var(--warning-rgb) / <alpha-value>)',
       },
       fontFamily: {
         sans: ['"PingFang SC"', '"Microsoft YaHei"', 'system-ui', 'sans-serif'],

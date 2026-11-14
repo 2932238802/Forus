@@ -46,10 +46,10 @@ async function onLock() {
 
       <!-- 锁定（清除本设备解锁状态，回到封面） -->
       <button
-        v-for="x in (open ? [1] : [])"
-        :key="'lock'"
+        v-for="item in (open ? ['lock'] : [])"
+        :key="item"
         type="button"
-        class="flex items-center gap-2.5 rounded-full border border-white/10 bg-slate-950/65 px-4 py-2 text-sm text-slate-400 shadow-lg shadow-black/20 backdrop-blur-xl transition hover:-translate-y-0.5 hover:border-rose-400/30 hover:bg-rose-500/20 hover:text-rose-300"
+        class="flex items-center gap-2.5 rounded-full border border-white/10 bg-slate-950/65 px-4 py-2 text-sm text-slate-400 shadow-lg shadow-black/20 backdrop-blur-xl transition hover:-translate-y-0.5 hover:border-negative/30 hover:bg-negative/20 hover:text-negative"
         :style="{ transitionDelay: `${links.length * 40}ms` }"
         @click="onLock"
       >

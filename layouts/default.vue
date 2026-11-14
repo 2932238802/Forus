@@ -2,10 +2,16 @@
 // 所有页面共享的布局：背景特效随主题切换（星空流星 / 樱花飘落）
 import { computed } from 'vue'
 import { useTheme } from '~/composables/useTheme'
+import { useToday } from '~/composables/useToday'
+import { useCover } from '~/composables/useCover'
 import { todayCelebration } from '~/utils/date'
 
 const { current } = useTheme()
-const isNpyBirthday = computed(() => todayCelebration()?.kind === 'birthday-npy')
+const { today } = useToday()
+const { coverVisible } = useCover()
+const isNpyBirthday = computed(
+  () => !!today.value && todayCelebration(today.value)?.kind === 'birthday-npy',
+)
 </script>
 
 <template>
@@ -14,8 +20,8 @@ const isNpyBirthday = computed(() => todayCelebration()?.kind === 'birthday-npy'
     <div class="pointer-events-none fixed inset-0 -z-10">
       <div class="absolute inset-0 night-bg" />
       <ClientOnly>
-        <SakuraCanvas v-if="current === 'sakura'" />
-        <MeteorCanvas v-else :interactive="true" />
+        <SakuraCanvas v-if="!coverVisible && current === 'sakura'" />
+        <MeteorCanvas v-else-if="!coverVisible" :interactive="true" />
       </ClientOnly>
       <div
         class="absolute right-0 top-0 h-[55vh] w-[50vw] opacity-30"

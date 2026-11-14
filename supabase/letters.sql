@@ -18,12 +18,12 @@ create table if not exists public.letters (
 create index if not exists letters_to_idx
   on public.letters (who_to, unlock_date);
 
--- RLS：允许匿名读写（与其他表一致，前端用暗号挡人）
--- 注意：内容是否可见由前端按 unlock_date + 身份控制
+-- RLS：默认拒绝所有匿名访问。
+-- 信件只通过服务端 /api/letters 使用 service_role key 读写。
 alter table public.letters enable row level security;
 
+-- 显式撤销 anon 权限（即使旧环境残留策略也一并清理）
 drop policy if exists "anon all letters" on public.letters;
-create policy "anon all letters" on public.letters for all to anon using (true) with check (true);
+revoke select, insert, update, delete on public.letters from anon;
 
--- 实时同步（新表，直接添加即可）
-alter publication supabase_realtime add table public.letters;
+-- 信件通过服务端读写，不加入 Realtime publication。

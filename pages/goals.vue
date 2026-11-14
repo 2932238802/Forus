@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useGoals } from '~/composables/useGoals'
+import { notifyError } from '~/utils/errors'
 
 definePageMeta({ middleware: 'unlocked' })
 
@@ -11,14 +12,31 @@ const total = computed(() => goals.value.length)
 const doneCount = computed(() => goals.value.filter((g) => g.done).length)
 const percent = computed(() => (total.value ? Math.round((doneCount.value / total.value) * 100) : 0))
 
-function submit() {
+async function submit() {
   if (!title.value.trim()) return
-  addGoal(title.value)
-  title.value = ''
+  try {
+    await addGoal(title.value)
+    title.value = ''
+  } catch (err) {
+    notifyError('添加目标', err)
+  }
 }
 
-function confirmRemove(id: string, name: string) {
-  if (confirm(`删除目标「${name}」？`)) removeGoal(id)
+async function toggle(id: string, done: boolean) {
+  try {
+    await toggleGoal(id, done)
+  } catch (err) {
+    notifyError('更新目标', err)
+  }
+}
+
+async function confirmRemove(id: string, name: string) {
+  if (!confirm(`删除目标「${name}」？`)) return
+  try {
+    await removeGoal(id)
+  } catch (err) {
+    notifyError('删除目标', err)
+  }
 }
 </script>
 
@@ -40,12 +58,12 @@ function confirmRemove(id: string, name: string) {
               />
               <defs>
                 <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stop-color="#7dd3fc" />
-                  <stop offset="100%" stop-color="#06b6d4" />
+                  <stop offset="0%" stop-color="var(--accent-2)" />
+                  <stop offset="100%" stop-color="var(--accent)" />
                 </linearGradient>
               </defs>
             </svg>
-            <span class="absolute inset-0 flex items-center justify-center text-[11px] font-medium text-cyan-200">
+            <span class="absolute inset-0 flex items-center justify-center text-[11px] font-medium text-accent-soft">
               {{ doneCount }}/{{ total }}
             </span>
           </div>
@@ -59,7 +77,7 @@ function confirmRemove(id: string, name: string) {
             maxlength="100"
             placeholder="想一起做的事…"
             class="surface-input min-w-0 flex-1 rounded-xl px-4 py-2.5 text-sm outline-none"
-          />
+          >
           <button
             type="submit"
             class="surface-button shrink-0 rounded-xl px-4 py-2.5 text-sm font-medium"
@@ -75,15 +93,15 @@ function confirmRemove(id: string, name: string) {
             :key="g.id"
             class="group relative flex items-center gap-3 overflow-hidden rounded-2xl border p-4 transition"
             :class="g.done
-              ? 'border-cyan-400/30 bg-cyan-400/5'
-              : 'border-white/10 bg-white/5 hover:border-sky-400/30 hover:bg-white/[0.07]'"
+              ? 'border-accent-soft/30 bg-accent-soft/5'
+              : 'border-white/10 bg-white/5 hover:border-accent/30 hover:bg-white/[0.07]'"
           >
             <button
               class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition active:scale-90"
               :class="g.done
-                ? 'border-transparent bg-gradient-to-br from-sky-400 to-cyan-500 text-white'
-                : 'border-white/25 text-transparent hover:border-sky-400'"
-              @click="toggleGoal(g.id, !g.done)"
+                ? 'border-transparent bg-gradient-to-br from-accent to-accent-soft text-white'
+                : 'border-white/25 text-transparent hover:border-accent'"
+              @click="toggle(g.id, !g.done)"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="h-3.5 w-3.5">
                 <path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" />
@@ -93,7 +111,7 @@ function confirmRemove(id: string, name: string) {
               {{ g.title }}
             </span>
             <button
-              class="shrink-0 text-slate-600 opacity-0 transition hover:text-rose-400 group-hover:opacity-100"
+              class="shrink-0 text-slate-600 opacity-0 transition hover:text-negative group-hover:opacity-100"
               @click="confirmRemove(g.id, g.title)"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4">

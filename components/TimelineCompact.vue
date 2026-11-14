@@ -3,6 +3,7 @@ import { ref, reactive } from 'vue'
 import type { Milestone } from '~/types'
 import { useMilestones } from '~/composables/useMilestones'
 import { formatDate } from '~/utils/date'
+import { notifyError } from '~/utils/errors'
 
 const { milestones, addMilestone, updateMilestone, removeMilestone } = useMilestones()
 
@@ -34,9 +35,22 @@ function openEdit(m: Milestone) {
 async function save() {
   if (!form.title.trim() || !form.date) return
   const payload = { title: form.title.trim(), date: form.date, emoji: form.emoji, type: form.type }
-  if (editingId.value) await updateMilestone(editingId.value, payload)
-  else await addMilestone(payload)
-  showEditor.value = false
+  try {
+    if (editingId.value) await updateMilestone(editingId.value, payload)
+    else await addMilestone(payload)
+    showEditor.value = false
+  } catch (err) {
+    notifyError('保存节点', err)
+  }
+}
+
+async function confirmRemove(id: string, title: string) {
+  if (!confirm(`删除节点「${title}」？`)) return
+  try {
+    await removeMilestone(id)
+  } catch (err) {
+    notifyError('删除节点', err)
+  }
 }
 </script>
 
@@ -44,7 +58,7 @@ async function save() {
   <div class="flex h-full flex-col">
     <div class="mb-2 flex shrink-0 justify-end">
       <button
-        class="flex h-7 w-7 items-center justify-center rounded-full bg-sky-500 text-white transition hover:bg-sky-400 active:scale-95"
+        class="flex h-7 w-7 items-center justify-center rounded-full bg-accent text-white transition hover:brightness-110 active:scale-95"
         title="添加节点"
         @click="openAdd"
       >
@@ -61,18 +75,18 @@ async function save() {
             {{ m.emoji || '🤍' }}
           </span>
           <div class="min-w-0 flex-1 cursor-pointer" @click="openEdit(m)">
-            <p class="truncate text-sm font-medium text-slate-200 transition group-hover:text-sky-300">
+            <p class="truncate text-sm font-medium text-slate-200 transition group-hover:text-accent">
               {{ m.title }}
             </p>
             <p class="text-[11px] tabular-nums tracking-wide text-slate-500">{{ formatDate(m.date) }}</p>
           </div>
           <div class="flex shrink-0 gap-1 opacity-0 transition group-hover:opacity-100">
-            <button class="text-slate-500 hover:text-sky-300" title="编辑" @click="openEdit(m)">
+            <button class="text-slate-500 hover:text-accent" title="编辑" @click="openEdit(m)">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5">
                 <path d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4 12.5-12.5z" stroke-linecap="round" stroke-linejoin="round" />
               </svg>
             </button>
-            <button class="text-slate-500 hover:text-rose-400" title="删除" @click="removeMilestone(m.id)">
+            <button class="text-slate-500 hover:text-negative" title="删除" @click="confirmRemove(m.id, m.title)">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5">
                 <path d="M18 6L6 18M6 6l12 12" stroke-linecap="round" />
               </svg>
@@ -98,7 +112,7 @@ async function save() {
               :key="e"
               type="button"
               class="flex h-8 w-8 items-center justify-center rounded-lg text-base transition"
-              :class="form.emoji === e ? 'bg-sky-500/30 ring-1 ring-sky-400' : 'bg-white/5 hover:bg-white/10'"
+              :class="form.emoji === e ? 'bg-accent/30 ring-1 ring-accent' : 'bg-white/5 hover:bg-white/10'"
               @click="form.emoji = e"
             >
               {{ e }}
@@ -109,18 +123,18 @@ async function save() {
             <input
               v-model="form.title"
               placeholder="节点名称"
-              class="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-100 outline-none focus:border-sky-400"
-            />
+              class="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-100 outline-none focus:border-accent"
+            >
             <input
               v-model="form.date"
               type="date"
-              class="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-300 outline-none focus:border-sky-400"
-            />
+              class="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-300 outline-none focus:border-accent"
+            >
           </div>
 
           <div class="mt-5 flex justify-end gap-2">
             <button class="rounded-full px-4 py-2 text-sm text-slate-400 hover:bg-white/5" @click="showEditor = false">取消</button>
-            <button class="rounded-full bg-sky-500 px-5 py-2 text-sm font-medium text-white hover:bg-sky-400 active:scale-95" @click="save">保存</button>
+            <button class="rounded-full bg-accent px-5 py-2 text-sm font-medium text-white hover:brightness-110 active:scale-95" @click="save">保存</button>
           </div>
         </div>
       </div>
