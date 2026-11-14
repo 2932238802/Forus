@@ -16,8 +16,11 @@ export async function adminRest<T = unknown>(
   options: AdminRestOptions = {},
 ): Promise<T> {
   const config = useRuntimeConfig()
+  // Internal URL points directly at the PostgREST root (e.g. http://forus-rest:3000),
+  // so table paths are appended without the Supabase-style /rest/v1 prefix.
+  const internalUrl = (config.supabaseInternalUrl as string) || ''
   const url =
-    (config.supabaseInternalUrl as string) ||
+    internalUrl ||
     (config.public.supabase.url as string) ||
     process.env.NUXT_PUBLIC_SUPABASE_URL ||
     process.env.SUPABASE_URL ||
@@ -42,7 +45,8 @@ export async function adminRest<T = unknown>(
       ).toString()
     : ''
 
-  return (await $fetch<T>(`${url}/rest/v1/${path}${query}`, {
+  const restPath = internalUrl ? `/${path}` : `/rest/v1/${path}`
+  return (await $fetch<T>(`${url.replace(/\/$/, '')}${restPath}${query}`, {
     method: options.method || 'GET',
     body: options.body as Record<string, unknown> | undefined,
     headers: {
