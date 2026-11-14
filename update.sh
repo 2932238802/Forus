@@ -50,7 +50,7 @@ usage() {
 注意：
   - 脚本会在拉取后检查 update.sh 是否变化；变化时自动用新脚本重新执行。
   - 同一目录同时只允许一个更新进程（flock）。
-  - 数据存放在 Supabase，本脚本不会备份或修改任何云端数据。
+  - 数据存放在自建 Postgres，本脚本不会备份或修改数据库。
   - 服务名默认为 forus / forus-app（systemd 单元 / PM2 进程 / compose 服务）。
   - DEPLOY_MODE=none 不会自动重启，因此无法完成 L4/L5，脚本会明确失败退出。
 USAGE
@@ -136,7 +136,7 @@ recovery_hint() {
   printf '\n可恢复信息：\n'
   printf '  失败阶段：%s\n' "${FAILED_STAGE:-未知}"
   printf '  查看日志：%s\n' "$(mode_log_cmd "${SERVICE_KIND:-${MODE:-auto}}")"
-  printf '  数据：存放在 Supabase 云端，本脚本未做任何写入或备份\n'
+  printf '  数据：存放在自建 Postgres，本脚本未做任何写入或备份\n'
   if [ -n "${OUTPUT_PREV:-}" ] && [ -d "${OUTPUT_PREV:-}/output" ]; then
     printf '  上一版构建：%s/output（脚本会在构建失败时自动恢复）\n' "$OUTPUT_PREV"
   fi
@@ -810,4 +810,4 @@ else
   printf '  版本校验：health 返回的版本与 HEAD 一致\n'
 fi
 printf '  首页：http://127.0.0.1:%s/\n' "$PORT"
-printf '  数据：Supabase（脚本未改动）\n'
+printf '  数据：自建 Postgres（脚本未改动）\n'

@@ -1,10 +1,25 @@
 # 数据库与存储
 
-所有 SQL 都在 `supabase/` 目录，需在 **Supabase 后台 → SQL Editor** 手动执行。RLS 大部分为「允许 `anon` 全量读写」，这是为保留前端直连 + Realtime 而做的取舍；`letters` 与 `cat_messages` 例外，只允许服务端 service_role 访问。风险见 [security.md](./security.md)。
+当前生产数据在**自建 Postgres**（`forus-db`，Postgres 17），通过 PostgREST 暴露 REST；浏览器使用 `forus_app` JWT，服务端敏感数据使用 `forus_service` JWT。`letters` 与 `cat_messages` 只允许 `forus_service` 访问。本地上传文件在 `/opt/forus/uploads`，通过 `/uploads/` 提供。
+
+`supabase/` 下的 SQL 是历史 Supabase 初始化脚本（含 anon 策略、Storage、publication），保留作表结构参考；**不要**原样执行到自建库。当前环境的角色/JWT/GRANT、导入与备份步骤见 [迁移方案](./archive/261114/16-Supabase迁移自建数据库-开工方案.md)。
 
 脚本已做幂等处理：publication 添加/移除、policy 创建、种子数据都可重复执行；一次性数据迁移记录在 `public.schema_migrations`。
 
-## SQL 执行顺序
+## 自建环境角色
+
+| 角色 | 属性 | 权限 |
+|---|---|---|
+| `authenticator` | LOGIN NOINHERIT | 供 PostgREST 连接并 SET ROLE |
+| `forus_app` | NOLOGIN | 12 张业务表 CRUD；`letters` / `cat_messages` 无权限 |
+| `forus_service` | NOLOGIN BYPASSRLS | 全部 15 张表 CRUD；仅服务端使用 |
+| `forus_noaccess` | NOLOGIN | 无权限，PostgREST `PGRST_DB_ANON_ROLE` |
+
+本地 RLS 关闭；权限由 GRANT 控制。若以后启用 RLS，需要为 `forus_app` 补 `for all to forus_app using (true) with check (true)` 策略。
+
+## SQL 执行顺序（历史 Supabase 脚本，仅供参考）
+
+> 以下顺序只适用于当时的 Supabase 云端项目；自建环境不要照跑。自建库当前通过角色 + GRANT 控制权限。
 
 首次部署请**严格按顺序**执行（脚本之间存在依赖）：
 
@@ -154,51 +169,29 @@
 
 ## Row Level Security
 
-大部分业务表启用了 RLS，并创建：
+当前自建库中 15 张表的 `relrowsecurity` 均为 `false`，也没有 policy；访问控制由角色 + GRANT 完成：
 
-```sql
-create policy "anon all <table>" on public.<table>
-  for all to anon using (true) with check (true);
-```
+- `forus_app`：12 张业务表 SELECT/INSERT/UPDATE/DELETE；
+- `forus_service`：全部表 CRUD（BYPASSRLS）；
+- `letters` / `cat_messages` 不授予 `forus_app`，浏览器直连返回 403。
 
-含义：任何持有 Supabase anon key 的请求都能读写整张表。暗号只保护前端界面，不保护这些数据。
+历史 Supabase 脚本中的 `create policy ... to anon` 仅用于当时的云端项目；如果以后在自建库重新启用 RLS，必须为 `forus_app` 建对应策略，否则 GRANT 之后仍看不到行。
 
-例外：
+风险见 [security.md](./security.md)。
 
-- `letters`：撤销 anon 的 select/insert/update/delete，只允许 service_role；Nitro `/api/letters` 负责归属与到期校验。
-- `cat_messages`：撤销 anon 权限，只允许 service_role；Nitro `/api/cat` 与 `/api/cat-messages` 负责读写。
+## Storage / 本地上传
 
-详见 [security.md](./security.md)。
+- 生产文件目录：`/opt/forus/uploads`（容器内 `/data/uploads`，由 compose 挂载）。
+- 上传：`POST /api/upload`，扩展名白名单（jpg/jpeg/png/webp/gif/mp4/webm/mov），25MB 上限，UUID 文件名。
+- 删除：`POST /api/media/delete`，只允许删除上传目录内的文件，带路径穿越防护。
+- URL：`/uploads/<uuid>.<ext>`；历史 Supabase 公链在迁移时已改写，`utils/storage.ts` 仍兼容旧前缀以便解析。
+- 公开读；nginx 对 `/uploads/` 加 `nosniff` 与 CSP `sandbox`。
 
-## Storage
+## 实时 / 轮询
 
-`storage.sql`：
+前端已移除 Supabase Realtime，改为 `composables/usePolling.ts`：挂载时拉取、30 秒轮询、页面隐藏跳过、回前台立即刷新；每个写操作成功后本地 `fetchAll()`。
 
-- 创建 **public** 桶 `media`；
-- `anon` 只能 `insert`（限定 `bucket_id = 'media'`）；
-- `public` 可 `select`，因此图片公链无需鉴权即可访问；
-- `anon update/delete` 已移除，删除/改写通过 `POST /api/media/delete`（service_role）。
-
-代码约定：
-
-- 上传路径：`${crypto.randomUUID()}.${ext}`；
-- 图片上传前压缩；视频原样；
-- 记录更新/删除时通过公链前缀 `/storage/v1/object/public/media/` 反解文件路径，交由服务端清理旧文件。
-
-## Realtime
-
-每个新表脚本都会执行（可重复执行）：
-
-```sql
-do $$
-begin
-  alter publication supabase_realtime add table public.<table>;
-exception when duplicate_object then null;
-end $$;
-```
-
-Realtime 的 `postgres_changes` 同样受 RLS 约束，当前允许 anon 读的表前端能收到全部变更。
-`letters` 与 `cat_messages` 已移出 publication：前者走服务端接口，后者由服务端持久化。
+涉及表：`milestones`、`notes`、`media`、`memos`、`memo_comments`、`goals`、`likes`、`adores`、`dislikes`、`calendar_marks`、`pushbacks`。`pokes` 由 `PokeAlert` / `TogetherCard` 自己的定时器轮询；`letters` 与 `cat_messages` 走服务端接口。
 
 ## 脚本约定与注意事项
 
@@ -215,10 +208,10 @@ Realtime 的 `postgres_changes` 同样受 RLS 约束，当前允许 anon 读的�
 
 ## 重置数据库
 
-项目没有 migration 框架。彻底重建的做法：
+项目没有 migration 框架。自建环境彻底重建的做法：
 
-1. 在 Supabase SQL Editor 中手动删除所有业务表、`memo_comments`、`cat_messages` 等；
-2. 清空 Storage 的 `media` 桶；
-3. 按上表顺序重新执行脚本。
+1. 从最近备份恢复：`zcat /opt/backup/forus-*.sql.gz | docker exec -i forus-db psql -U postgres -d forus`；
+2. 重新执行角色/GRANT（见迁移方案 P1.2）；
+3. 文件从 `/opt/backup/forus-uploads-*.tar.gz` 恢复到 `/opt/forus/uploads`。
 
 删除表时注意 `memo_comments.memo_id` 的外键级联，先删 `memos` 会连带删除评论。

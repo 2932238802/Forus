@@ -121,7 +121,7 @@
 ### 2.4 开工前必须确认的 8 件事
 
 - [ ] `docker compose ps`：确认 `forus-db` / `forus-rest` / `forus-rest-write` / `forus-app` 的真实服务名与网络
-- [ ] `docker exec forus-app wget -qO- http://forus-rest:3001/` 能从 app 容器访问 PostgREST（内网 URL 用服务名，**不是 `127.0.0.1`**）
+- [ ] `docker exec forus-app wget -qO- http://forus-rest:3000/` 能从 app 容器访问 PostgREST（内网 URL 用服务名，**不是 `127.0.0.1`**）
 - [ ] 本地 DB 名、超级用户（后文按 `forus` / `postgres` 写）
 - [ ] PostgREST 版本 ≥ v11（支持 `PGRST_JWT_SECRET`；`docker inspect` 查镜像 tag）
 - [ ] 本地 `public` schema 各表列是否与云端导出一致（见 P1.1）
@@ -147,7 +147,7 @@
 - 页面与 `/db` 同源，`apikey` / `Authorization` 头**不会触发 CORS 预检**
 - **单 PostgREST 实例**即可，不再需要按 HTTP 方法分流（原因见 3.2）
 - 图片统一走 `/uploads/`，`media.url` / `notes.image_url` 改成相对路径
-- 服务端 `adminRest` 走 Docker 内网 `http://forus-rest:3001`，不绕公网 nginx
+- 服务端 `adminRest` 走 Docker 内网 `http://forus-rest:3000`，不绕公网 nginx
 - 前端历史数据里的 Supabase 公链全部改写，`/storage/v1` 与 `/realtime/v1` 不再被请求
 
 ### 3.1 角色与权限模型
@@ -668,15 +668,22 @@ async function addGoal(title: string) {
 
 ```ts
 const config = useRuntimeConfig()
+// 内网地址直接指向 PostgREST 根；公网地址才需要 Supabase 风格的 /rest/v1 前缀
+const internalUrl = (config.supabaseInternalUrl as string) || ''
 const url =
-  (config.supabaseInternalUrl as string) ||
+  internalUrl ||
   (config.public.supabase.url as string) ||
   process.env.NUXT_PUBLIC_SUPABASE_URL ||
   process.env.SUPABASE_URL ||
   ''
+// ...
+const restPath = internalUrl ? `/${path}` : `/rest/v1/${path}`
+return await $fetch(`${url.replace(/\/$/, '')}${restPath}${query}`, { /* ... */ })
 ```
 
-`.env` 里设 `NUXT_SUPABASE_INTERNAL_URL=http://forus-rest:3001`（compose 同网络的服务名）。若服务名不同，用 `docker exec forus-app wget -qO- http://<服务名>:3001/` 先验证。
+`.env` 里设 `NUXT_SUPABASE_INTERNAL_URL=http://forus-rest:3000`（compose 同网络的服务名，容器端口是 3000）。若服务名不同，用 `docker exec forus-app wget -qO- http://<服务名>:3000/` 先验证。
+
+> 关键：PostgREST 的 API 根是 `/`。内网地址 `http://forus-rest:3000` 后**不能**再拼 `/rest/v1`；公网地址 `https://forus.../db` 后必须拼（由 nginx 剥成 `/`）。2026-11-14 切源时就是漏了这一点，导致信件/小猫 404。
 
 > 也可以继续让服务端走公网 nginx（`https://forus.../db`），但会有一次 TLS 回环；内网直连更快、故障面更小。
 
@@ -936,7 +943,7 @@ NUXT_PUBLIC_SUPABASE_KEY=<APP_JWT>
 
 # 服务端（只在 server runtime 可见）
 SUPABASE_SERVICE_ROLE_KEY=<SERVICE_JWT>
-NUXT_SUPABASE_INTERNAL_URL=http://forus-rest:3001
+NUXT_SUPABASE_INTERNAL_URL=http://forus-rest:3000
 
 # 本地上传目录（容器内路径；对应宿主机 /opt/forus/uploads）
 # 现有 compose 用单数 NUXT_UPLOAD_DIR，代码两种都认
@@ -984,6 +991,31 @@ curl -s -o /dev/null -w 'anon=%{http_code}\n' \
 ```
 
 浏览器里再点一遍：解锁 → 首页 → 留言 → 图片墙 → 目标 → 备忘录 → 信件 → 小猫 → 日历。Network 中不应再出现 `*.supabase.co`。
+
+**2026-11-14 21:00 切源记录**
+
+- 停机窗口约 9 分钟（20:54–21:03，其中包含一次内部 URL 修复与重新部署）。
+- 最终导出：`/opt/backup/supabase-export-final/`，notes 159、likes 93、adores 90、calendar_marks 89、pokes 72、cat_messages 56、media 26、memos 15、goals 10、letters 7、milestones 6、pushbacks 5、dislikes 2、diaries 1、memo_comments 1；Storage 30 个文件。
+- 本地库导入后 15 表行数全部一致；`media.url` 改写 26 行、`notes.image_url` 改写 1 行，残留 Supabase 公链 0。
+- 应用环境：`SUPABASE_URL=https://forus.los-theseus.site/db`、`NUXT_SUPABASE_INTERNAL_URL=http://forus-rest:3000`。
+- 验证：`/api/health` 200；`/api/cat-messages` 56 条；`/api/letters?identity=you` 7 封；公网 `/db/rest/v1/notes` 159 条、`pokes` 72 条；上传/访问/删除均 200。
+- 浏览器端公共配置已确认：`NUXT_PUBLIC_SUPABASE_URL=https://forus.los-theseus.site/db`，首页 HTML 中无 `supabase.co`。
+- 备份：`/opt/backup/forus-pre-final-import-2026-11-14-2054.sql.gz`、`/opt/backup/forus-post-migration-2026-11-14-2103.sql.gz`、对应 uploads tar；配置备份在 `/opt/backup/forus-config/`。
+- 已安装每日备份 cron（04:30 数据库、04:40 图片、04:50 清理 14 天前）。
+
+**回退到云端**：
+
+```bash
+cp /opt/backup/forus-config/.env.pre-switch-2026-11-14-2101 /opt/forus/.env
+# 同时把 docker-compose.yml 里临时加的 NUXT_SUPABASE_INTERNAL_URL 保留也无害
+cd /opt/forus && docker compose up -d --force-recreate forus-app
+```
+
+**本次踩坑记录**：
+
+- PostgREST 的 API 根是 `/`，不是 `/rest/v1`；nginx 必须匹配 `/db/rest/v1/` 并整个剥掉，`adminRest` 走内网时也不能追加 `/rest/v1`。
+- 远程 heredoc 里用 `docker exec -i psql` 会吞掉脚本 stdin，导入循环会停在第一条；改用不带 `-i` 的 `docker exec`。
+- `update.sh` 要求仓库目录干净；服务器上的 `.env.pre-*`、`docker-compose.yml.*` 备份要移到 `/opt/backup/forus-config/`，密钥文件加入 `.git/info/exclude`。
 
 ---
 
@@ -1087,7 +1119,7 @@ docker compose up -d forus-rest forus-app
 | `forus_app` 与旧 policy `to anon` 不匹配 | 前端全部 403 | P1.2 为 `forus_app` 建策略并验证 |
 | 浏览器只有一把 key，却按读写分双实例 | 所有写操作失败 | 采用单 PostgREST + `forus_app`；不要用只读 key |
 | service JWT 配错/权限不足 | 信件、小猫、服务端接口 500/403 | P1.2 给 `forus_service` `BYPASSRLS` + 全表 grant；P1.4 curl 验证 |
-| `adminRest` 在容器内用 `127.0.0.1` | 连到自己，接口全挂 | 用 compose 服务名 `http://forus-rest:3001` |
+| `adminRest` 在容器内用 `127.0.0.1` | 连到自己，接口全挂 | 用 compose 服务名 `http://forus-rest:3000` |
 | nginx 默认 1m body | 图片/视频上传 413 | `client_max_body_size 30m`；接口 25MB 上限 |
 | 改成轮询后自己的操作不刷新 | 体验像卡住 | 每个写操作后 `fetchAll()`；`usePolling` 回前台立即刷新 |
 | 轮询请求过多 | DB/电量压力 | 30 秒 + 页面隐藏暂停；两人站可接受 |
@@ -1110,9 +1142,9 @@ docker compose up -d forus-rest forus-app
 | P1 准备（schema/角色/JWT/PostgREST） | ✅ 完成 | 2026-11-14 20:45 | 角色 + GRANT（RLS 保持关闭）；两把 JWT 在 `/opt/forus/.pg-jwt.env`；PostgREST 改为 authenticator + JWT |
 | P2 代码改造（上传/删除/轮询） | ✅ 完成并部署 | 2026-11-14 20:43 | commit `050cde5`；`update.sh` 通过 L1–L5；服务器上传/删除冒烟通过 |
 | P3 nginx 暴露 `/db` `/uploads` | ✅ 完成 | 2026-11-14 20:47 | `/db/rest/v1/` → 3001；`/uploads/` 静态；公网鉴权矩阵与上传冒烟通过 |
-| P4 数据导入 | 🟨 演练完成（未切源） | 2026-11-14 20:50 | 已用 20:07 导出演练导入，15 表行数一致；20:53 新导出 notes 159 / pokes 72；切源前需再次导入这份新数据 |
-| P5 切换数据源 | ⬜ 未开始 | | 停机窗口第 2 步 |
-| P6 验收与收尾 | ⬜ 未开始 | | 以「断开 Supabase 仍可用」为准 |
+| P4 数据导入 | ✅ 完成 | 2026-11-14 21:00 | 最终导出 notes 159 / pokes 72 / storage 30；15 表行数一致；URL 与图片已本地化 |
+| P5 切换数据源 | ✅ 完成 | 2026-11-14 21:03 | `.env` 指向本地 PostgREST；app 重建；cat/letters/上传验证通过；云端保留回退 |
+| P6 验收与收尾 | 🟨 进行中 | | 自动化链路已验证；浏览器逐页点检、文档同步待做；云端保留一周 |
 
 ---
 
@@ -1171,7 +1203,7 @@ NUXT_PUBLIC_SUPABASE_KEY=<forus_app JWT>
 
 # 服务端
 SUPABASE_SERVICE_ROLE_KEY=<forus_service JWT>
-NUXT_SUPABASE_INTERNAL_URL=http://forus-rest:3001
+NUXT_SUPABASE_INTERNAL_URL=http://forus-rest:3000
 
 # 上传
 NUXT_UPLOADS_DIR=/data/uploads
