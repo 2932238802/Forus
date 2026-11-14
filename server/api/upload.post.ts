@@ -2,6 +2,7 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import { randomUUID } from 'node:crypto'
 import { join } from 'node:path'
 import { requireUnlocked } from '~/server/utils/require-unlock'
+import { resolveUploadsDir } from '~/server/utils/uploads-dir'
 
 const MAX_BYTES = 25 * 1024 * 1024
 const ALLOWED_EXT = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif', 'mp4', 'webm', 'mov'])
@@ -28,8 +29,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: '不支持的文件类型' })
   }
 
-  const config = useRuntimeConfig()
-  const dir = String(config.uploadsDir || join(process.cwd(), '.data/uploads'))
+  const dir = resolveUploadsDir()
   await mkdir(dir, { recursive: true })
 
   const name = `${randomUUID()}.${ext}`

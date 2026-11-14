@@ -1,6 +1,7 @@
 import { createReadStream } from 'node:fs'
 import { stat } from 'node:fs/promises'
-import { extname, join, resolve, sep } from 'node:path'
+import { extname, resolve, sep } from 'node:path'
+import { resolveUploadsDir } from '~/server/utils/uploads-dir'
 
 const MIME: Record<string, string> = {
   '.jpg': 'image/jpeg',
@@ -20,8 +21,7 @@ const MIME: Record<string, string> = {
  */
 export default defineEventHandler(async (event) => {
   const path = getRouterParam(event, 'path') || ''
-  const config = useRuntimeConfig()
-  const base = resolve(String(config.uploadsDir || join(process.cwd(), '.data/uploads')))
+  const base = resolve(resolveUploadsDir())
   const target = resolve(base, path)
 
   if (!target.startsWith(base + sep)) {

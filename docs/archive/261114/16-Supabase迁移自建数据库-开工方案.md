@@ -504,6 +504,7 @@ runtimeConfig: {
 ```
 
 > **P2 上线前就把 `NUXT_UPLOADS_DIR=/data/uploads` 写进 `.env` 并重建**（容器内挂载点）。否则上传会落到容器内部的 `.data/uploads`，重建即丢。此时数据源仍是云端，不影响其他功能。
+> 服务器现有 compose 用的是单数 `NUXT_UPLOAD_DIR`，代码已同时兼容两种写法；不必为了改名去动 compose。
 
 > h3 的 `readMultipartFormData` 会把整个请求读进内存（见 `node_modules/h3/dist/index.mjs`），25MB 是上限；nginx 端也要限 body。视频再大就需要改流式上传，当前两人站不需要。
 
@@ -935,6 +936,7 @@ SUPABASE_SERVICE_ROLE_KEY=<SERVICE_JWT>
 NUXT_SUPABASE_INTERNAL_URL=http://forus-rest:3001
 
 # 本地上传目录（容器内路径；对应宿主机 /opt/forus/uploads）
+# 现有 compose 用单数 NUXT_UPLOAD_DIR，代码两种都认
 NUXT_UPLOADS_DIR=/data/uploads
 ```
 
@@ -1130,6 +1132,7 @@ docker compose up -d forus-rest forus-app
 
 - `server/api/upload.post.ts`
 - `server/routes/uploads/[...path].get.ts`
+- `server/utils/uploads-dir.ts`
 - `composables/usePolling.ts`
 - `tests/storage.test.ts`
 

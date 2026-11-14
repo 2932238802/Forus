@@ -1,6 +1,7 @@
 import { unlink } from 'node:fs/promises'
-import { join, resolve, sep } from 'node:path'
+import { resolve, sep } from 'node:path'
 import { requireUnlocked } from '~/server/utils/require-unlock'
+import { resolveUploadsDir } from '~/server/utils/uploads-dir'
 
 /**
  * POST /api/media/delete
@@ -23,8 +24,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: '没有需要删除的文件' })
   }
 
-  const config = useRuntimeConfig()
-  const base = resolve(String(config.uploadsDir || join(process.cwd(), '.data/uploads')))
+  const base = resolve(resolveUploadsDir())
 
   let removed = 0
   for (const path of paths) {

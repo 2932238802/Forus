@@ -15,8 +15,11 @@ export default defineNuxtConfig({
       '',
     // Server-only internal PostgREST URL (docker service name, not 127.0.0.1).
     supabaseInternalUrl: process.env.NUXT_SUPABASE_INTERNAL_URL || '',
-    // Local uploads directory. On the server this is the container mount /data/uploads.
-    uploadsDir: process.env.NUXT_UPLOADS_DIR || '',
+    // Local uploads directory. Server compose uses the singular NUXT_UPLOAD_DIR.
+    uploadsDir:
+      process.env.NUXT_UPLOADS_DIR ||
+      process.env.NUXT_UPLOAD_DIR ||
+      '',
     // OpenAI-compatible API configuration for Cat Chat.
     catApiBase: process.env.NUXT_CAT_API_BASE || 'https://wawapii.com/v1',
     catApiKey: process.env.NUXT_CAT_API_KEY || '',
