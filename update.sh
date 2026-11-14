@@ -51,7 +51,7 @@ usage() {
   - 脚本会在拉取后检查 update.sh 是否变化；变化时自动用新脚本重新执行。
   - 同一目录同时只允许一个更新进程（flock）。
   - 数据存放在 Supabase，本脚本不会备份或修改任何云端数据。
-  - 服务名默认为 forus（systemd 单元 / PM2 进程 / compose 服务）。
+  - 服务名默认为 forus / forus-app（systemd 单元 / PM2 进程 / compose 服务）。
   - DEPLOY_MODE=none 不会自动重启，因此无法完成 L4/L5，脚本会明确失败退出。
 USAGE
 }
@@ -222,6 +222,19 @@ case "$MODE" in
   docker|systemd|pm2|none|auto) ;;
   *) echo "× 未知的 DEPLOY_MODE：$MODE（可用：docker / systemd / pm2 / none / auto）" >&2; exit 2 ;;
 esac
+
+# compose 服务名可能是 forus 或 forus-app；优先找正在运行的 app 服务。
+compose_app_service() {
+  local svc=""
+  svc="$(docker compose ps --format '{{.Service}} {{.State}}' 2>/dev/null \
+    | awk '$2 == "running" && ($1 == "forus" || $1 == "forus-app") { print $1; exit }')"
+  if [ -n "$svc" ]; then
+    printf '%s\n' "$svc"
+    return 0
+  fi
+  docker compose ps --format '{{.Service}}' 2>/dev/null | head -n1
+}
+COMPOSE_APP_SERVICE="$(command -v docker >/dev/null 2>&1 && compose_app_service || true)"
 
 PORT="${PORT:-$(env_file_value PORT)}"
 PORT="${PORT:-3000}"
@@ -530,11 +543,12 @@ process.stdin.on("end", () => {
 }
 
 restart_docker() {
-  if ! docker compose up -d --build; then
+  local svc="${COMPOSE_APP_SERVICE:-forus}"
+  if ! docker compose up -d --build --force-recreate "$svc"; then
     return 1
   fi
   local -a ids=()
-  mapfile -t ids < <(docker compose ps -q forus 2>/dev/null || true)
+  mapfile -t ids < <(docker compose ps -q "$svc" 2>/dev/null || true)
   if [ "${#ids[@]}" -eq 0 ]; then
     mapfile -t ids < <(docker compose ps -q 2>/dev/null || true)
   fi
@@ -578,7 +592,7 @@ case "$MODE" in
   auto)
     if { [ -f docker-compose.yml ] || [ -f docker-compose.yaml ] || [ -f compose.yaml ] || [ -f compose.yml ]; } \
       && command -v docker >/dev/null 2>&1 \
-      && docker compose ps --format '{{.Service}} {{.State}}' 2>/dev/null | grep -qE '^forus[[:space:]]+running$'; then
+      && docker compose ps --format '{{.Service}} {{.State}}' 2>/dev/null | grep -qE '^forus(-app)?[[:space:]]+running$'; then
       SERVICE_KIND=docker
     elif command -v systemctl >/dev/null 2>&1 \
       && systemctl list-unit-files --no-legend forus.service 2>/dev/null | grep -q '^forus\.service'; then
@@ -586,10 +600,19 @@ case "$MODE" in
     elif command -v pm2 >/dev/null 2>&1 && pm2 pid forus >/dev/null 2>&1; then
       SERVICE_KIND=pm2
     else
-      fail_stage "L4 进程" "没有找到 forus 服务。首次部署请先用 systemd / PM2 / Docker 启动，或手动指定 --mode=systemd/pm2/docker"
+      fail_stage "L4 进程" "没有找到 forus / forus-app 服务。首次部署请先用 systemd / PM2 / Docker 启动，或手动指定 --mode=systemd/pm2/docker"
     fi
     ;;
 esac
+
+# Docker 模式下容器端口固定 3000，但宿主机映射可能是 8081；
+# 从 compose 读取真实映射，避免健康检查打错端口。
+if [ "$SERVICE_KIND" = docker ]; then
+  MAPPED_PORT="$(docker compose port "${COMPOSE_APP_SERVICE:-forus}" 3000 2>/dev/null | tail -n1 || true)"
+  if [ -n "$MAPPED_PORT" ]; then
+    PORT="${MAPPED_PORT##*:}"
+  fi
+fi
 
 DEPLOY_INFO_FILE="$DATA_DIR/deploy-info.json"
 mkdir -p "$DATA_DIR"
