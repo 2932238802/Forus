@@ -264,16 +264,19 @@ where table_schema='public'
 order by table_name, ordinal_position;
 ```
 
-#### P1.2 角色、权限与 RLS 策略
+#### P1.2 角色与权限（2026-11-14 已执行）
 
-以下 SQL 在 `forus-db` 里以 `postgres` 执行。角色名可按需替换，但要和 JWT 的 `role` 字段、PostgREST 的 `db-anon-role` 保持一致。
+实测本地库：15 张表 `relrowsecurity = false`，`pg_policies` 为空——本地快照从未启用 RLS，权限完全由 GRANT 控制。因此**不需要建 RLS 策略**，只建角色 + 授权。
+
+实际执行过的 SQL（`authenticator` 密码来自 `.env` 的 `FORUS_PGRST_PASSWORD`）：
 
 ```sql
--- 1) 角色
 do $$
 begin
   if not exists (select 1 from pg_roles where rolname = 'authenticator') then
-    create role authenticator noinherit login password '换成一个强密码';
+    create role authenticator noinherit login password 'FORUS_PGRST_PASSWORD';
+  else
+    alter role authenticator with login noinherit password 'FORUS_PGRST_PASSWORD';
   end if;
   if not exists (select 1 from pg_roles where rolname = 'forus_app') then
     create role forus_app nologin;
@@ -286,30 +289,9 @@ begin
   end if;
 end $$;
 
--- 若角色已经存在（例如上次执行过），确认属性正确：
--- alter role authenticator with login password '换成一个强密码';
--- alter role forus_service with bypassrls;
-
+alter role forus_service with bypassrls;
 grant forus_app, forus_service to authenticator;
 grant usage on schema public to authenticator, forus_app, forus_service;
-
--- 2) 12 张业务表：为 forus_app 建策略 + 授权
-do $$
-declare
-  t text;
-  tables text[] := array[
-    'milestones','notes','media','memos','memo_comments','goals',
-    'likes','adores','dislikes','pokes','calendar_marks','pushbacks'
-  ];
-begin
-  foreach t in array tables loop
-    execute format('alter table public.%I enable row level security', t);
-    execute format('drop policy if exists "forus_app all %1$s" on public.%1$I', t);
-    execute format(
-      'create policy "forus_app all %1$s" on public.%1$I
-         for all to forus_app using (true) with check (true)', t);
-  end loop;
-end $$;
 
 grant select, insert, update, delete on
   public.milestones, public.notes, public.media, public.memos,
@@ -317,31 +299,36 @@ grant select, insert, update, delete on
   public.dislikes, public.pokes, public.calendar_marks, public.pushbacks
 to forus_app;
 
--- 3) 敏感表：只给 service；forus_app 明确无权
-alter table public.letters enable row level security;
-alter table public.cat_messages enable row level security;
-revoke all on public.letters, public.cat_messages from forus_app;
-
 grant select, insert, update, delete on all tables in schema public to forus_service;
-
--- 4) 让 PostgREST 重新加载
-notify pgrst, 'reload schema';
+revoke all on public.letters, public.cat_messages from forus_app;
 ```
 
-说明：
+结果：
 
-- 旧的 `anon all ...` 策略留着也不会影响 `forus_app`（策略按角色匹配），确认不再需要后可 `drop policy` 清理。
-- `forus_service` 的 `BYPASSRLS` 只绕过 RLS，不绕过表权限，所以第 3 步的 `grant` 必须执行。
-- 以后新建表：记得重新 `grant` 并加 `forus_app` 策略，否则前端会 403。
+| 角色 | 属性 | 权限 |
+|---|---|---|
+| `authenticator` | LOGIN NOINHERIT | 只能 SET ROLE |
+| `forus_app` | NOLOGIN | 12 张业务表 CRUD；`letters` / `cat_messages` / `diaries` 无权限 |
+| `forus_service` | NOLOGIN BYPASSRLS | 全部 15 张表 CRUD |
+| `forus_noaccess` | NOLOGIN | 无任何权限，作为无 JWT 时的 anon role |
 
-验证角色与策略：
+注意：
+
+- **RLS 保持关闭**（与迁移前一致）。如果以后启用 RLS，必须为 `forus_app` 补 `for all to forus_app using (true) with check (true)` 策略，否则 GRANT 之后仍然看不到行。
+- 服务器密码与签名密钥写在 `/opt/forus/.env`：`FORUS_PGRST_PASSWORD`、`FORUS_PGRST_JWT_SECRET`；两把 JWT 写在 `/opt/forus/.pg-jwt.env`（600）。
+- 敏感表只给 `forus_service`；浏览器 JWT 直接访问 `letters` / `cat_messages` 返回 403。
+
+验证角色与授权：
 
 ```sql
-select rolname, rolbypassrls from pg_roles
+select rolname, rolcanlogin, rolbypassrls from pg_roles
  where rolname in ('authenticator','forus_app','forus_service','forus_noaccess');
 
-select tablename, policyname, roles
-  from pg_policies where schemaname='public' order by tablename;
+select grantee, table_schema, table_name, privilege_type
+  from information_schema.role_table_grants
+ where grantee in ('forus_app','forus_service')
+   and table_schema='public'
+ order by grantee, table_name;
 ```
 
 #### P1.3 生成两把 JWT
@@ -423,6 +410,8 @@ curl -s -o /dev/null -w '%{http_code}\n' \
 ```
 
 > 注意：PostgREST 对无权限表通常返回 `401` 或空数组 + 403，取决于版本与 RLS。以实际状态码为准，**不能是 200 + 数据**。
+
+**2026-11-14 实测结果**：3001 / 3002 无 token → `401`；app JWT 读 `notes` → `200`；app JWT 读 `letters` / `diaries` → `403`；service JWT 读 `letters` → `200`；app JWT 插入/删除 `notes` → `201` / `204`。
 
 #### P1.5 重新导出云端数据（迁移当天执行）
 
@@ -715,7 +704,9 @@ server {
     client_max_body_size 30m;
 
     # PostgREST（同源，无 CORS 预检）
-    location /db/ {
+    # 注意：PostgREST 的 API 根是 /，supabase-js 会请求 /db/rest/v1/<table>，
+    # 所以 location 必须匹配 /db/rest/v1/ 并把它整个剥掉。
+    location /db/rest/v1/ {
         proxy_pass http://127.0.0.1:3001/;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
@@ -741,7 +732,8 @@ server {
 }
 ```
 
-- `location /db/` 的 `proxy_pass` 末尾有 `/`，会自动把 `/db/rest/v1/...` 改写成 `/rest/v1/...`。
+- `location /db/rest/v1/` 的 `proxy_pass` 末尾有 `/`，会把 `/db/rest/v1/notes` 改写成 `/notes`（PostgREST API 根是 `/`）。
+- 服务器实际配置：`/etc/nginx/sites-enabled/los-theseus-services.conf`（`sites-available` 已同步）。改动前备份到 `/root/nginx-backups/`；不要把 `.bak` 留在 `sites-enabled`，否则会被当成第二个 server 块加载。
 - 若以后仍想做「GET 走只读实例」，用 `map` 变量；**不要**在 `limit_except` 里写 `proxy_pass`（nginx 容易直接报 `proxy_pass directive is not allowed here`）：
 
 ```nginx
@@ -751,8 +743,8 @@ map $request_method $forus_db_upstream {
     GET     http://127.0.0.1:3001;
     HEAD    http://127.0.0.1:3001;
 }
-# location /db/ 内
-rewrite ^/db/(.*)$ /$1 break;
+# location /db/rest/v1/ 内
+rewrite ^/db/rest/v1/(.*)$ /$1 break;
 proxy_pass $forus_db_upstream;
 ```
 
@@ -769,6 +761,8 @@ curl -s -o /dev/null -w '%{http_code}\n' \
 ```
 
 > P3 完成后、P5 之前，前端仍用云端 URL，所以公开 `/db` 不会立刻产生流量；可以先放着。
+
+**2026-11-14 实测结果**：公网 `/db/rest/v1/notes` 无 token → `401`；app JWT 读 notes → `200`；app JWT 读 letters → `403`；service JWT 读 letters → `200`；公网插入/删除 notes → `201` / `204`。公网 `/uploads/<file>` → `200`，响应带 `Content-Security-Policy: sandbox`、`X-Content-Type-Options: nosniff`、`Cache-Control: max-age=604800`。
 
 ---
 
@@ -910,6 +904,15 @@ docker exec forus-db psql -U postgres -d forus -c "notify pgrst, 'reload schema'
 ```bash
 docker compose up -d forus-rest
 ```
+
+**2026-11-14 演练结果**
+
+- 使用 `/opt/backup/supabase-export/` 的 20:07 导出导入本地库；15 表行数与导出完全一致（notes 157、likes 93、adores 90、calendar_marks 89、pokes 71、cat_messages 56、media 26、memos 15、goals 10、letters 7、milestones 6、pushbacks 5、dislikes 2、diaries 1、memo_comments 1）。
+- `media.url` 改写 26 行、`notes.image_url` 改写 1 行；残留 Supabase 公链 0。
+- 图片复制后 `/opt/forus/uploads` 共 30 个文件；抽查 3 张公网访问均 200。
+- 导入前本地库备份：`/opt/backup/forus-pre-import-2026-11-14-2048.sql.gz`。
+- 20:53 重新导出（脚本 `/opt/backup/supabase-export/export.sh`，输出 `/opt/backup/supabase-export-fresh/`）：notes 159、pokes 72、storage 30 个文件，说明 20:07 之后有新写入；最终切源必须用这份新导出。
+- **最终 P5 切源前必须重新导出云端最新数据并再次导入**（两次导出间隔内的新写入不会自动同步）；再次 `TRUNCATE` 需要明确确认。
 
 ---
 
@@ -1104,10 +1107,10 @@ docker compose up -d forus-rest forus-app
 | 阶段 | 状态 | 完成时间 | 备注 |
 |---|---|---|---|
 | P0 数据导出 | ✅ 完成 | 2026-11-14 20:10 | 15 表 196K + 29 文件 8.2M，在 `/opt/backup/supabase-export/`；执行当天需重跑 |
-| P1 准备（schema/角色/JWT/PostgREST） | ⬜ 未开始 | | 无停机 |
-| P2 代码改造（上传/删除/轮询） | ✅ 代码完成（未部署） | 2026-11-14 | 新增 `/api/upload`、`/uploads` 开发路由、`usePolling`；11 个 composable 去除 Realtime；`build/typecheck/test/lint` 通过 |
-| P3 nginx 暴露 `/db` `/uploads` | ⬜ 未开始 | | 无停机；上线 P2 前先加 `client_max_body_size` |
-| P4 数据导入 | ⬜ 未开始 | | 停机窗口第 1 步 |
+| P1 准备（schema/角色/JWT/PostgREST） | ✅ 完成 | 2026-11-14 20:45 | 角色 + GRANT（RLS 保持关闭）；两把 JWT 在 `/opt/forus/.pg-jwt.env`；PostgREST 改为 authenticator + JWT |
+| P2 代码改造（上传/删除/轮询） | ✅ 完成并部署 | 2026-11-14 20:43 | commit `050cde5`；`update.sh` 通过 L1–L5；服务器上传/删除冒烟通过 |
+| P3 nginx 暴露 `/db` `/uploads` | ✅ 完成 | 2026-11-14 20:47 | `/db/rest/v1/` → 3001；`/uploads/` 静态；公网鉴权矩阵与上传冒烟通过 |
+| P4 数据导入 | 🟨 演练完成（未切源） | 2026-11-14 20:50 | 已用 20:07 导出演练导入，15 表行数一致；20:53 新导出 notes 159 / pokes 72；切源前需再次导入这份新数据 |
 | P5 切换数据源 | ⬜ 未开始 | | 停机窗口第 2 步 |
 | P6 验收与收尾 | ⬜ 未开始 | | 以「断开 Supabase 仍可用」为准 |
 
