@@ -1,6 +1,7 @@
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref } from 'vue'
 import { useDb } from '~/composables/useDb'
 import type { IdentityKey } from '~/composables/useIdentity'
+import { usePolling } from '~/composables/usePolling'
 
 export type LikeKind = 'like' | 'dislike'
 export type LikeCategory = 'food' | 'behavior' | 'thing' | 'other'
@@ -56,6 +57,7 @@ export function useLikes() {
       .from('likes')
       .insert({ owner, kind, category, text: text.trim() })
     if (error) throw error
+    await fetchAll()
   }
 
   /** 通用更新（拖拽换喜欢/不喜欢栏 → 改 kind；换分类 → 改 category） */
@@ -65,25 +67,16 @@ export function useLikes() {
   ) {
     const { error } = await supabase.from('likes').update(patch).eq('id', id)
     if (error) throw error
+    await fetchAll()
   }
 
   async function removeLike(id: string) {
     const { error } = await supabase.from('likes').delete().eq('id', id)
     if (error) throw error
+    await fetchAll()
   }
 
-  let channel: any = null
-  onMounted(() => {
-    fetchAll()
-    const name = `likes-changes-${Math.random().toString(36).slice(2, 9)}`
-    channel = supabase
-      .channel(name)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'likes' }, () => fetchAll())
-      .subscribe()
-  })
-  onUnmounted(() => {
-    if (channel) supabase.removeChannel(channel)
-  })
+  usePolling(fetchAll)
 
   return { likes, addLike, updateLike, removeLike }
 }

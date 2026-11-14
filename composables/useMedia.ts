@@ -1,13 +1,15 @@
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref } from 'vue'
 import { useDb } from '~/composables/useDb'
 import type { MediaItem } from '~/types'
 import { useMediaUpload } from '~/composables/useMediaUpload'
+import { usePolling } from '~/composables/usePolling'
 
 export function useMedia() {
   const supabase = useDb()
   const { upload, removeUrl } = useMediaUpload()
   const media = ref<MediaItem[]>([])
   const loading = ref(true)
+  let loaded = false
 
   function mapRow(row: any): MediaItem {
     return {
@@ -21,16 +23,17 @@ export function useMedia() {
   }
 
   async function fetchAll() {
-    loading.value = true
+    if (!loaded) loading.value = true
     const { data, error } = await supabase
       .from('media')
       .select('*')
       .order('created_at', { ascending: true })
     if (!error && data) media.value = data.map(mapRow)
+    loaded = true
     loading.value = false
   }
 
-  /** 上传文件到 Supabase Storage，返回公链（图片自动压缩） */
+  /** 上传文件到本地 /uploads，返回相对 URL（图片自动压缩）。 */
   async function uploadFile(file: File): Promise<{ url: string; kind: 'image' | 'video' }> {
     const { url, kind } = await upload(file)
     return { url, kind }
@@ -44,6 +47,7 @@ export function useMedia() {
       date: item.date || null,
     })
     if (error) throw error
+    await fetchAll()
   }
 
   async function updateItem(id: string, patch: Partial<MediaItem>) {
@@ -59,6 +63,7 @@ export function useMedia() {
       })
       .eq('id', id)
     if (error) throw error
+    await fetchAll()
     if (prev && patch.url && patch.url !== prev.url) {
       try {
         await removeUrl(prev.url)
@@ -69,11 +74,12 @@ export function useMedia() {
   }
 
   async function removeItem(id: string) {
-    // 删行前先拿到 url，以便清理 Storage 里的实际文件，避免空间泄漏
+    // 删行前先拿到 url，以便清理本地上传目录里的实际文件，避免空间泄漏
     const target = media.value.find((m) => m.id === id)
     const { error } = await supabase.from('media').delete().eq('id', id)
     if (error) throw error
-    // 仅清理本站 Storage 内的文件（外链自动忽略）；失败不阻断主流程
+    await fetchAll()
+    // 仅清理本站存储内的文件（外链自动忽略）；失败不阻断主流程
     if (target?.url) {
       try {
         await removeUrl(target.url)
@@ -83,19 +89,7 @@ export function useMedia() {
     }
   }
 
-  // 实时同步（每个实例用唯一频道名，避免重复订阅同名频道导致报错）
-  let channel: any = null
-  onMounted(() => {
-    fetchAll()
-    const channelName = `media-changes-${Math.random().toString(36).slice(2, 9)}`
-    channel = supabase
-      .channel(channelName)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'media' }, () => fetchAll())
-      .subscribe()
-  })
-  onUnmounted(() => {
-    if (channel) supabase.removeChannel(channel)
-  })
+  usePolling(fetchAll)
 
   return { media, loading, addItem, updateItem, removeItem, uploadFile }
 }

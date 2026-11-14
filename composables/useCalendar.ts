@@ -1,5 +1,6 @@
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref } from 'vue'
 import { useDb } from '~/composables/useDb'
+import { usePolling } from '~/composables/usePolling'
 
 export interface CalMark {
   id: string
@@ -41,6 +42,7 @@ export function useCalendar() {
           .delete()
           .eq('id', existing.id)
         if (error) throw error
+        await fetchAll()
       }
       return
     }
@@ -51,20 +53,10 @@ export function useCalendar() {
       const { error } = await supabase.from('calendar_marks').insert({ date, text: t })
       if (error) throw error
     }
+    await fetchAll()
   }
 
-  let channel: any = null
-  onMounted(() => {
-    fetchAll()
-    const name = `calendar-changes-${Math.random().toString(36).slice(2, 9)}`
-    channel = supabase
-      .channel(name)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'calendar_marks' }, () => fetchAll())
-      .subscribe()
-  })
-  onUnmounted(() => {
-    if (channel) supabase.removeChannel(channel)
-  })
+  usePolling(fetchAll)
 
   return { marks, byDate, setMark }
 }

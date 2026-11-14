@@ -1,6 +1,7 @@
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref } from 'vue'
 import { useDb } from '~/composables/useDb'
 import { useMediaUpload } from '~/composables/useMediaUpload'
+import { usePolling } from '~/composables/usePolling'
 
 export interface Note {
   id: string
@@ -41,6 +42,7 @@ export function useNotes() {
       .from('notes')
       .insert({ author, kind: 'text', text: text.trim() })
     if (error) throw error
+    await fetchAll()
   }
 
   async function addImage(author: string, imageUrl: string, caption = '') {
@@ -51,13 +53,15 @@ export function useNotes() {
       text: caption,
     })
     if (error) throw error
+    await fetchAll()
   }
 
   async function removeNote(id: string) {
     const target = notes.value.find((n) => n.id === id)
     const { error } = await supabase.from('notes').delete().eq('id', id)
     if (error) throw error
-    // 图片消息同时清理 Storage，避免文件永久残留
+    await fetchAll()
+    // 图片消息同时清理本地文件，避免文件永久残留
     if (target?.kind === 'image' && target.imageUrl) {
       try {
         await removeUrl(target.imageUrl)
@@ -67,18 +71,7 @@ export function useNotes() {
     }
   }
 
-  let channel: any = null
-  onMounted(() => {
-    fetchAll()
-    const channelName = `notes-changes-${Math.random().toString(36).slice(2, 9)}`
-    channel = supabase
-      .channel(channelName)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'notes' }, () => fetchAll())
-      .subscribe()
-  })
-  onUnmounted(() => {
-    if (channel) supabase.removeChannel(channel)
-  })
+  usePolling(fetchAll)
 
   return { notes, addText, addImage, removeNote }
 }

@@ -1,5 +1,6 @@
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref } from 'vue'
 import { useDb } from '~/composables/useDb'
+import { usePolling } from '~/composables/usePolling'
 
 export interface Goal {
   id: string
@@ -30,30 +31,22 @@ export function useGoals() {
       .from('goals')
       .insert({ title: title.trim(), done: false })
     if (error) throw error
+    await fetchAll()
   }
 
   async function toggleGoal(id: string, done: boolean) {
     const { error } = await supabase.from('goals').update({ done }).eq('id', id)
     if (error) throw error
+    await fetchAll()
   }
 
   async function removeGoal(id: string) {
     const { error } = await supabase.from('goals').delete().eq('id', id)
     if (error) throw error
+    await fetchAll()
   }
 
-  let channel: any = null
-  onMounted(() => {
-    fetchAll()
-    const name = `goals-changes-${Math.random().toString(36).slice(2, 9)}`
-    channel = supabase
-      .channel(name)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'goals' }, () => fetchAll())
-      .subscribe()
-  })
-  onUnmounted(() => {
-    if (channel) supabase.removeChannel(channel)
-  })
+  usePolling(fetchAll)
 
   return { goals, addGoal, toggleGoal, removeGoal }
 }

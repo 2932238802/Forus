@@ -1,6 +1,7 @@
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref } from 'vue'
 import { useDb } from '~/composables/useDb'
 import type { IdentityKey } from '~/composables/useIdentity'
+import { usePolling } from '~/composables/usePolling'
 
 /**
  * Adore!! —— 记录「对方的优点 / 很喜欢对方的地方」，用于加固喜欢。
@@ -38,6 +39,7 @@ export function useAdores() {
     if (!text.trim()) return
     const { error } = await supabase.from('adores').insert({ owner, text: text.trim() })
     if (error) throw error
+    await fetchAll()
   }
 
   async function updateAdore(id: string, patch: Partial<Pick<Adore, 'text'>>) {
@@ -45,25 +47,16 @@ export function useAdores() {
     if (patch.text !== undefined) body.text = patch.text.trim()
     const { error } = await supabase.from('adores').update(body).eq('id', id)
     if (error) throw error
+    await fetchAll()
   }
 
   async function removeAdore(id: string) {
     const { error } = await supabase.from('adores').delete().eq('id', id)
     if (error) throw error
+    await fetchAll()
   }
 
-  let channel: any = null
-  onMounted(() => {
-    fetchAll()
-    const name = `adores-changes-${Math.random().toString(36).slice(2, 9)}`
-    channel = supabase
-      .channel(name)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'adores' }, () => fetchAll())
-      .subscribe()
-  })
-  onUnmounted(() => {
-    if (channel) supabase.removeChannel(channel)
-  })
+  usePolling(fetchAll)
 
   return { adores, addAdore, updateAdore, removeAdore }
 }

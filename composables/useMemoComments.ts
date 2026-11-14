@@ -1,6 +1,7 @@
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref } from 'vue'
 import { useDb } from '~/composables/useDb'
 import type { IdentityKey } from '~/composables/useIdentity'
+import { usePolling } from '~/composables/usePolling'
 
 export interface MemoComment {
   id: string
@@ -44,25 +45,16 @@ export function useMemoComments() {
       .from('memo_comments')
       .insert({ memo_id: memoId, author, text: text.trim() })
     if (error) throw error
+    await fetchAll()
   }
 
   async function removeComment(id: string) {
     const { error } = await supabase.from('memo_comments').delete().eq('id', id)
     if (error) throw error
+    await fetchAll()
   }
 
-  let channel: any = null
-  onMounted(() => {
-    fetchAll()
-    const name = `memo-comments-${Math.random().toString(36).slice(2, 9)}`
-    channel = supabase
-      .channel(name)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'memo_comments' }, () => fetchAll())
-      .subscribe()
-  })
-  onUnmounted(() => {
-    if (channel) supabase.removeChannel(channel)
-  })
+  usePolling(fetchAll)
 
   return { comments, byMemo, addComment, removeComment }
 }

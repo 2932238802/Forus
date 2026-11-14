@@ -1,6 +1,7 @@
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref } from 'vue'
 import { useDb } from '~/composables/useDb'
 import type { IdentityKey } from '~/composables/useIdentity'
+import { usePolling } from '~/composables/usePolling'
 
 export interface Dislike {
   id: string
@@ -34,6 +35,7 @@ export function useDislikes() {
     if (!text.trim()) return
     const { error } = await supabase.from('dislikes').insert({ owner, text: text.trim() })
     if (error) throw error
+    await fetchAll()
   }
 
   async function updateDislike(id: string, text: string) {
@@ -43,26 +45,16 @@ export function useDislikes() {
       .update({ text: text.trim() })
       .eq('id', id)
     if (error) throw error
+    await fetchAll()
   }
 
   async function removeDislike(id: string) {
     const { error } = await supabase.from('dislikes').delete().eq('id', id)
     if (error) throw error
+    await fetchAll()
   }
 
-  let channel: any = null
-  onMounted(() => {
-    fetchAll()
-    const channelName = `dislikes-changes-${Math.random().toString(36).slice(2, 9)}`
-    channel = supabase
-      .channel(channelName)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'dislikes' }, () => fetchAll())
-      .subscribe()
-  })
-
-  onUnmounted(() => {
-    if (channel) supabase.removeChannel(channel)
-  })
+  usePolling(fetchAll)
 
   return { dislikes, addDislike, updateDislike, removeDislike }
 }

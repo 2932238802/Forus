@@ -1,9 +1,11 @@
+import { unlink } from 'node:fs/promises'
+import { join, resolve, sep } from 'node:path'
 import { requireUnlocked } from '~/server/utils/require-unlock'
 
 /**
  * POST /api/media/delete
  * body: { paths: string[] }
- * 使用 service_role 删除 Storage 文件；anon 不再拥有 update/delete 权限。
+ * 删除本地上传目录中的文件；路径必须落在上传目录内，防止路径穿越。
  */
 export default defineEventHandler(async (event) => {
   requireUnlocked(event)
@@ -22,32 +24,19 @@ export default defineEventHandler(async (event) => {
   }
 
   const config = useRuntimeConfig()
-  const url =
-    (config.public.supabase.url as string) ||
-    process.env.NUXT_PUBLIC_SUPABASE_URL ||
-    process.env.SUPABASE_URL ||
-    ''
-  const key =
-    (config.supabaseServiceKey as string) ||
-    process.env.NUXT_SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    ''
-  if (!url || !key) {
-    throw createError({
-      statusCode: 500,
-      statusMessage: '服务端缺少 SUPABASE_SERVICE_ROLE_KEY',
-    })
+  const base = resolve(String(config.uploadsDir || join(process.cwd(), '.data/uploads')))
+
+  let removed = 0
+  for (const path of paths) {
+    const target = resolve(base, path)
+    if (!target.startsWith(base + sep)) continue
+    try {
+      await unlink(target)
+      removed++
+    } catch (err: unknown) {
+      if ((err as NodeJS.ErrnoException)?.code !== 'ENOENT') throw err
+    }
   }
 
-  await $fetch(`${url}/storage/v1/object/media`, {
-    method: 'DELETE',
-    headers: {
-      apikey: key,
-      Authorization: `Bearer ${key}`,
-      'Content-Type': 'application/json',
-    },
-    body: { prefixes: paths },
-  })
-
-  return { ok: true, removed: paths.length }
+  return { ok: true, removed }
 })

@@ -1,6 +1,7 @@
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref } from 'vue'
 import { useDb } from '~/composables/useDb'
 import type { IdentityKey } from '~/composables/useIdentity'
+import { usePolling } from '~/composables/usePolling'
 
 export interface Memo {
   id: string
@@ -39,11 +40,13 @@ export function useMemo() {
       .from('memos')
       .insert({ owner, text: text.trim(), done: false })
     if (error) throw error
+    await fetchAll()
   }
 
   async function toggleMemo(id: string, done: boolean) {
     const { error } = await supabase.from('memos').update({ done }).eq('id', id)
     if (error) throw error
+    await fetchAll()
   }
 
   /** 修改备忘录文字内容 */
@@ -54,25 +57,16 @@ export function useMemo() {
       .update({ text: text.trim() })
       .eq('id', id)
     if (error) throw error
+    await fetchAll()
   }
 
   async function removeMemo(id: string) {
     const { error } = await supabase.from('memos').delete().eq('id', id)
     if (error) throw error
+    await fetchAll()
   }
 
-  let channel: any = null
-  onMounted(() => {
-    fetchAll()
-    const channelName = `memos-changes-${Math.random().toString(36).slice(2, 9)}`
-    channel = supabase
-      .channel(channelName)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'memos' }, () => fetchAll())
-      .subscribe()
-  })
-  onUnmounted(() => {
-    if (channel) supabase.removeChannel(channel)
-  })
+  usePolling(fetchAll)
 
   return { memos, addMemo, toggleMemo, updateMemoText, removeMemo }
 }

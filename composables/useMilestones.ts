@@ -1,6 +1,7 @@
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref } from 'vue'
 import { useDb } from '~/composables/useDb'
 import type { Milestone } from '~/types'
+import { usePolling } from '~/composables/usePolling'
 
 export function useMilestones() {
   const supabase = useDb()
@@ -33,6 +34,7 @@ export function useMilestones() {
       emoji: m.emoji || '🤍',
     })
     if (error) throw error
+    await fetchAll()
   }
 
   async function updateMilestone(id: string, m: Partial<Omit<Milestone, 'id' | 'description'>>) {
@@ -46,25 +48,16 @@ export function useMilestones() {
       })
       .eq('id', id)
     if (error) throw error
+    await fetchAll()
   }
 
   async function removeMilestone(id: string) {
     const { error } = await supabase.from('milestones').delete().eq('id', id)
     if (error) throw error
+    await fetchAll()
   }
 
-  let channel: any = null
-  onMounted(() => {
-    fetchAll()
-    const channelName = `milestones-changes-${Math.random().toString(36).slice(2, 9)}`
-    channel = supabase
-      .channel(channelName)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'milestones' }, () => fetchAll())
-      .subscribe()
-  })
-  onUnmounted(() => {
-    if (channel) supabase.removeChannel(channel)
-  })
+  usePolling(fetchAll)
 
   return { milestones, addMilestone, updateMilestone, removeMilestone }
 }

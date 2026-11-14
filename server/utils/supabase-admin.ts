@@ -17,6 +17,7 @@ export async function adminRest<T = unknown>(
 ): Promise<T> {
   const config = useRuntimeConfig()
   const url =
+    (config.supabaseInternalUrl as string) ||
     (config.public.supabase.url as string) ||
     process.env.NUXT_PUBLIC_SUPABASE_URL ||
     process.env.SUPABASE_URL ||

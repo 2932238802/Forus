@@ -1,6 +1,7 @@
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref } from 'vue'
 import { useDb } from '~/composables/useDb'
 import type { IdentityKey } from '~/composables/useIdentity'
+import { usePolling } from '~/composables/usePolling'
 
 export interface Pushback {
   id: string
@@ -40,6 +41,7 @@ export function usePushbacks() {
       note: note.trim() || null,
     })
     if (error) throw error
+    await fetchAll()
   }
 
   async function updatePushback(id: string, patch: Partial<Pick<Pushback, 'text' | 'note'>>) {
@@ -48,25 +50,16 @@ export function usePushbacks() {
     if (patch.note !== undefined) body.note = patch.note.trim() || null
     const { error } = await supabase.from('pushbacks').update(body).eq('id', id)
     if (error) throw error
+    await fetchAll()
   }
 
   async function removePushback(id: string) {
     const { error } = await supabase.from('pushbacks').delete().eq('id', id)
     if (error) throw error
+    await fetchAll()
   }
 
-  let channel: any = null
-  onMounted(() => {
-    fetchAll()
-    const name = `pushbacks-changes-${Math.random().toString(36).slice(2, 9)}`
-    channel = supabase
-      .channel(name)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'pushbacks' }, () => fetchAll())
-      .subscribe()
-  })
-  onUnmounted(() => {
-    if (channel) supabase.removeChannel(channel)
-  })
+  usePolling(fetchAll)
 
   return { pushbacks, addPushback, updatePushback, removePushback }
 }
